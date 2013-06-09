@@ -18,45 +18,87 @@
 		public var parsys:particleSystem = new particleSystem();
 		public const timeMode_time:int = 40;
 		public var chickSpeed:int = 9;
-		public var c_chickSpeed:int = 0;
-		public var basicSpeed:int = 5;
+		private var c_chickSpeed:int = 0;
 		public var score:int = 0;
 		public var remainTime:int = 10;
-		public var gameTimer:Timer = new Timer(1000,1000);
 		public var currentMode:String = "harmony";
-		public var papple:apple = new apple();
+		private var papple:apple = new apple();
+		private var pbomb:bomb = new bomb();
 		public var fpsCat:fpsCatcher = new fpsCatcher();
 		public var gamedata:gameData = new gameData();
+		public var currentLevel:int = 1;
+
+		private var uis:Array = new Array();
+
+		public var levelUI:level_ui = new level_ui();
+		public var menuUI:menu_ui = new menu_ui();
+		public var rankUI:rank_ui = new rank_ui();
+
 
 		public function pickApple()
 		{
+			stop();
 			fpsCat.y = 520;
-			addChild(parsys);
-			gameTimer.addEventListener(TimerEvent.TIMER,gameTimerHandler);
 			addChild(fpsCat);
+			addChild(parsys);
+			parsys.initParticle(papple);
+			uis.push(menuUI,levelUI,rankUI);
+			showUI("menuUI");
 			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
 		}
 		/*
 		functions for buttons
 		*/
+		private function showUI(tname:String):void
+		{
+			for (var i:int = 0; i< uis.length; i++)
+			{
+				topLayer.addChild(uis[i]);
+				uis[i].visible = false;
+			}
+			switch (tname)
+			{
+				case "levelUI" :
+					uis[1].visible = true;
+					levelUI.time_btn.addEventListener(TouchEvent.TOUCH_TAP,timeMode);
+					levelUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					levelUI.high_txt.text = Object(root).gamedata.getHighest();
+					break;
+				case "rankUI" :
+					rankUI.visible = true;
+					rankUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					rankUI.rank_txt.text = gamedata.getFullRank();
+					break;
+				case "menuUI" :
+					menuUI.visible = true;
+					menuUI.select_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).selectLevel);
+					menuUI.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).exitProgram);
+					menuUI.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).showRank);
+					break;
+			}
+		}
 		public function returnHome(Event:TouchEvent)
 		{
-			gotoAndStop(2);
+			showUI("menuUI");
+			gotoAndStop(1);
 		}
 		public function returnLevel(Event:TouchEvent)
 		{
-			parsys.hideParticle();
-			gamedata.addRankResult(scoreUI.name_txt.text,score);
+			parsys.resetStats();
+			gamedata.addRankResult(scoreUI.name_txt.text,score,currentLevel);
 			score = 0;
-			gotoAndStop(3);
+			gotoAndStop(2);
+			showUI("levelUI");
 		}
 		public function selectLevel(Event:TouchEvent)
 		{
-			gotoAndStop(3);
+			showUI("levelUI");
+			gotoAndStop(2);
 		}
 		public function showRank(Event:TouchEvent)
 		{
-			gotoAndStop(6);
+			showUI("rankUI");
+			gotoAndStop(2);
 		}
 		public function exitProgram(Event:TouchEvent)
 		{
@@ -65,24 +107,23 @@
 		}
 		public function endGame(Event:TouchEvent)
 		{
-			gameOver();
+			removeChild(parsys);
+			removeChild(gameUI);
+			c_chickSpeed = 0;
+			stop_game_motion();
+			parsys.resetStats();
+			gotoAndStop(2);
+			showUI("levelUI");
+			remainTime = 0;
 		}
 		public function resumeGame(Event:TouchEvent)
 		{
-			if (currentMode == "time")
-			{
-				gameTimer.start();
-			}
 			add_game_motion();
 			addChickenListener();
 			gameUI.gotoAndStop(1);
 		}
 		public function pauseGame(Event:TouchEvent)
 		{
-			if (currentMode == "time")
-			{
-				gameTimer.stop();
-			}
 			stop_game_motion();
 			removeChickenListener();
 			gameUI.gotoAndStop(2);
@@ -100,32 +141,49 @@
 			remainTime +=  value;
 			gameUI.ttime.text = stomin(remainTime);
 		}
+		public function set_bomb(tx:Number)
+		{
+			this.addChild(pbomb);
+			pbomb.x = tx;
+			pbomb.y = 500;
+			pbomb.gotoAndPlay(1);
+		}
 		public function timeMode(Event:TouchEvent)
 		{
 			currentMode = "time";
-			parsys.addParticle(5,papple);
+			parsys.generate(80,40,5,10);
 			add_game_motion();
 			chickSpeed = 12;
-			basicSpeed = 8;
-			gotoAndStop(4);
+			gotoAndStop(3);
 			gameUI.tscore.text = String(score);
 			remainTime = timeMode_time;
 			gameUI.ttime.text = stomin(remainTime);
-			gameTimer.start();
+			gameUI.tcombo.text = "";
 			addChickenListener();
 		}
 		public function gameOver()
 		{
-			gotoAndStop(5);
+			gotoAndStop(4);
 			removeChild(parsys);
 			removeChild(gameUI);
-			scoreUI.tscore.text = String(score);
 			c_chickSpeed = 0;
 			stop_game_motion();
-			gameTimer.stop();
-			gameTimer.reset();
 		}
-		public function gameTimerHandler(event:TimerEvent):void
+		public function gameAnalyze():String
+		{
+			var result:String = score + "\r";
+			var bonus:int = 0;
+			result +=  String(parsys.caught) + " / " + String(parsys.miss + parsys.caught) + "\r";
+			if (parsys.miss < 15)
+			{
+				bonus +=  (15 - parsys.miss) * 3;
+			}
+			bonus +=  parsys.maxcombo * 3;
+			result +=  String(parsys.maxcombo) + "\r" + String(bonus);
+			score += bonus;
+			return result;
+		}
+		public function gameTimer():void
 		{
 			if (remainTime>0)
 			{

@@ -42,7 +42,7 @@
 				total += actualFPS;
 				ii++;
 				if(total>500){
-					trace((total/ii).toFixed(2));
+					//trace((total/ii).toFixed(2));
 					total = actualFPS;
 					ii = 1;
 				}

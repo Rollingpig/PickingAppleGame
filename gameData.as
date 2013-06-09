@@ -10,7 +10,7 @@
 
 		public function gameData()
 		{
-			file = file.resolvePath("highscore.txt");
+			file = file.resolvePath("rank.txt");
 			try
 			{
 				fileStream.open(file, FileMode.READ);
@@ -20,26 +20,27 @@
 			catch (error:IOError)
 			{
 				trace("not found");
+				ranklist.push(new Array,new Array,new Array,new Array,new Array);
 			}
 		}
-		public function getFullRank():String
+		public function getFullRank(level:int = 1):String
 		{
 			var temp:String = "";
-			if (ranklist.length !== 0)
+			if (ranklist[level].length !== 0)
 			{
-				for (var i=0; i<= ranklist.length - 1; i++)
+				for (var i=0; i<= ranklist[level].length - 1; i++)
 				{
-					temp = temp + String(i+1) + ".  " + ranklist[i].name + "  " + String(ranklist[i].score) + "\r";
+					temp = temp + String(i+1) + ".  " + ranklist[level][i].name + "  " + String(ranklist[level][i].score) + "\r";
 				}
 			}
 			return temp;
 		}
-		public function getHighest():String
+		public function getHighest(level:int = 1):String
 		{
 			var temp:String = "";
-			if (ranklist.length !== 0)
+			if (ranklist[level].length !== 0)
 			{
-				temp = ranklist[0].name + "\r" + String(ranklist[0].score);
+				temp = ranklist[level][0].name + "\r" + String(ranklist[level][0].score);
 			}
 			else
 			{
@@ -53,13 +54,14 @@
 			fileStream.writeObject(ranklist);
 			fileStream.close();
 		}
-		public function addRankResult(new_name:String,new_score:int):void
+		public function addRankResult(new_name:String,new_score:int,level:int = 1):void
 		{
-			ranklist.push({name:new_name,score:new_score});
-			ranklist.sortOn("score",Array.DESCENDING | Array.NUMERIC);
-			if (ranklist.length > 15)
+			trace(ranklist[level]);
+			ranklist[level].push({name:new_name,score:new_score});
+			ranklist[level].sortOn("score",Array.DESCENDING | Array.NUMERIC);
+			if (ranklist[level].length > 25)
 			{
-				ranklist.length = 15;
+				ranklist[level].length = 25;
 			}
 		}
 
