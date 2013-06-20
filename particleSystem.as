@@ -4,6 +4,7 @@
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.display.DisplayObject;
+	import flash.errors.IOError;
 	import particleData;
 
 	public class particleSystem extends Sprite
@@ -18,7 +19,6 @@
 		private const layerHeight:int = 700;
 		private const chickHeight:int = 570;
 
-		public var imaSpeed:int = 15;
 		public var hitZone:MovieClip;
 		public var basicSpeed:int = 7;
 
@@ -43,27 +43,21 @@
 				this.addChild(particle);
 			}
 		}
-		public function generate(regularParticle:int,totalTime:int,bombs:int = 5,irregular:int = 10)
+		public function generate(normal:int,totalTime:int,bombs:int,golden:int,threshold:Number,imaSpeed:int)
 		{
 			var totalFrame:int = totalTime * 24;
-			var deltaFrame:int = 0;
+			var deltaFrame:Number  = 0;
 			var beginFrame:int = int(chickHeight / basicSpeed);
 			var deltaX:int = 0;
-			for (var i:int = 0; i < regularParticle; i++)
+			var ut:Number = (totalFrame - beginFrame)/ normal;
+			deltaFrame = beginFrame;
+			for (var i:int = 0; i < normal; i++)
 			{
-				deltaFrame = Math.random() * (totalFrame - beginFrame) + beginFrame;
+				deltaFrame += ut;
 				motion.push(new particleData  );
-				motion[i].dropFrame = deltaFrame;
+				motion[i].dropFrame = int(deltaFrame);
 			}
-			motion.sortOn("dropFrame",Array.NUMERIC);
-			/*
-			for (i = 0; i < motion.length; i++)
-			{
-			trace(motion[i].dropFrame);
-			}
-			trace("---------------- ");
-			*/
-			for (i = 0; i < regularParticle; i++)
+			for (i = 0; i < normal; i++)
 			{
 				if (i == 0)
 				{
@@ -71,7 +65,7 @@
 				}
 				else
 				{
-					deltaX = (Math.random() * 60 /100 + 0.4) * imaSpeed * deltaFrame;
+					deltaX = (Math.random() * (1 - threshold) + threshold) * imaSpeed * deltaFrame;
 					if (motion[i - 1].targetX > layerWidth - 80)
 					{
 						motion[i].targetX = motion[i - 1].targetX - deltaX;
@@ -84,12 +78,11 @@
 					{
 						motion[i].targetX = motion[i - 1].targetX + deltaX * (int(Math.random() * 2) * 2 - 1);
 					}
-					//trace(motion[i].targetX);
 					motion[i].targetX = motion[i].targetX > layerWidth ? layerWidth:motion[i].targetX;
 					motion[i].targetX = motion[i].targetX < 0 ? 0:motion[i].targetX;
 				}
 				motion[i].vy = Math.random() * 12 + basicSpeed;
-				if (i < regularParticle - 1)
+				if (i < normal - 1)
 				{
 					deltaFrame = motion[i + 1].dropFrame - motion[i].dropFrame;
 				}
@@ -105,21 +98,15 @@
 				temp.targetX = Math.random() * layerWidth;
 				motion.push(temp);
 			}
-			for (i=0; i<irregular; i++)
+			for (i=0; i<golden; i++)
 			{
 				temp = new particleData  ;
 				temp.vy = Math.random() * 8 + basicSpeed + 5;
 				temp.dropFrame = Math.random() * (totalFrame - beginFrame) + beginFrame - int(chickHeight / temp.vy);
 				temp.targetX = Math.random() * layerWidth;
-				temp.type = "irr";
+				temp.type = "gold";
 				motion.push(temp);
 			}
-			/*
-			for (i = 0; i < motion.length; i++)
-			{
-			trace(motion[i].targetX);
-			}
-			*/
 		}
 		private function particle_motion(event:Event):void
 		{
@@ -130,7 +117,7 @@
 			}
 			for (var i:int = 0; i < motion.length; i++)
 			{
-				if (runFrame > motion[i].dropFrame)
+				if (runFrame > motion[i].dropFrame && motion[i].used == false)
 				{
 					if (motion[i].p.hitTestObject(hitZone))
 					{
@@ -139,12 +126,12 @@
 							case "n" :
 								get_apple();
 								break;
-							case "irr" :
+							case "gold" :
 								motion[i].p.gotoAndStop(1);
-								MovieClip(this.parent).add_score(5);
+								MovieClip(this.parent).add_score(7);
 								break;
 							case "bomb" :
-								MovieClip(this.parent).add_time(-10);
+								MovieClip(this.parent).add_time(-5);
 								bomb++;
 								motion[i].p.gotoAndStop(1);
 								MovieClip(this.parent).set_bomb(motion[i].targetX);
@@ -161,13 +148,13 @@
 							case "n" :
 								miss_apple();
 								break;
-							case "irr" :
+							case "gold" :
 							case "bomb" :
 								motion[i].p.gotoAndStop(1);
 								break;
 						}
 						motion[i].p.visible = false;
-						motion[i].dropFrame = 10000;
+						motion[i].used = true;
 						//motion[i].p = null;
 					}
 					else
@@ -188,7 +175,7 @@
 							case "bomb" :
 								motion[i].p.gotoAndStop(3);
 								break;
-								case "irr":
+								case "gold":
 								motion[i].p.gotoAndStop(2);
 								break;
 						}
@@ -236,7 +223,13 @@
 		{
 			combo = 0;
 			miss++;
-			MovieClip(this.parent).gameUI.tcombo.text = "";
+			try
+			{
+				MovieClip(this.parent).gameUI.tcombo.text = "";
+			}
+			catch (error:IOError)
+			{
+			}
 		}
 		public function addMotion():void
 		{

@@ -40,7 +40,7 @@
 			var temp:String = "";
 			if (ranklist[level].length !== 0)
 			{
-				temp = ranklist[level][0].name + "\r" + String(ranklist[level][0].score);
+				temp = String(ranklist[level][0].score);
 			}
 			else
 			{

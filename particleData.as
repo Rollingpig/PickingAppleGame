@@ -9,6 +9,7 @@
 		public var vy:int = 0;
 		public var type:String = "n";
 		public var p:MovieClip;
+		public var used:Boolean = false;
 		public function particleData()
 		{
 			// constructor code

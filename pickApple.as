@@ -12,11 +12,12 @@
 	import flash.ui.MultitouchInputMode;
 	import flash.events.Event;
 	import flash.desktop.NativeApplication;
+	import flash.net.URLRequest;
+	import flash.net.URLLoader;
 
 	public class pickApple extends MovieClip
 	{
 		public var parsys:particleSystem = new particleSystem();
-		public const timeMode_time:int = 40;
 		public var chickSpeed:int = 9;
 		private var c_chickSpeed:int = 0;
 		public var score:int = 0;
@@ -28,12 +29,15 @@
 		public var gamedata:gameData = new gameData();
 		public var currentLevel:int = 1;
 
-		private var uis:Array = new Array();
+		private var settingload:URLLoader = new URLLoader  ;
+		public var leveldata:XML;
+		public var levelIcons:Array = new Array  ;
 
+		private var uis:Array = new Array();
 		public var levelUI:level_ui = new level_ui();
 		public var menuUI:menu_ui = new menu_ui();
 		public var rankUI:rank_ui = new rank_ui();
-
+		public var aboutUI:about_ui = new about_ui();
 
 		public function pickApple()
 		{
@@ -42,9 +46,30 @@
 			addChild(fpsCat);
 			addChild(parsys);
 			parsys.initParticle(papple);
-			uis.push(menuUI,levelUI,rankUI);
+			uis.push(menuUI,levelUI,rankUI,aboutUI);
 			showUI("menuUI");
+			settingload.load(new URLRequest("levels.xml"));
+			settingload.addEventListener(Event.COMPLETE,levelSetting_handler);
 			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
+		}
+		function levelSetting_handler(event:Event):void
+		{
+			leveldata = XML(settingload.data);
+			var total:int = 0;
+			var cy :int = 150;
+			for each (var prop:XML in leveldata.level)
+			{
+				total++;
+				var p:levelIcon = new levelIcon();
+				p.high_txt.text = gamedata.getHighest(total);
+				p.label_txt.text = String(total);
+				p.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,showRank);
+				p.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
+				p.x = 50;
+				p.y = cy;
+				cy += 150;
+				levelIcons.push(p);
+			}
 		}
 		/*
 		functions for buttons
@@ -60,20 +85,30 @@
 			{
 				case "levelUI" :
 					uis[1].visible = true;
-					levelUI.time_btn.addEventListener(TouchEvent.TOUCH_TAP,timeMode);
 					levelUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
-					levelUI.high_txt.text = Object(root).gamedata.getHighest();
+					for(var j:int = 0;j<levelIcons.length;j++){
+						if(! levelUI.contains(levelIcons[j]))
+						{
+							levelUI.addChild(levelIcons[j]);
+						}
+						levelIcons[j].high_txt.text = gamedata.getHighest(j+1);
+					}
 					break;
 				case "rankUI" :
 					rankUI.visible = true;
-					rankUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
-					rankUI.rank_txt.text = gamedata.getFullRank();
+					rankUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,exitRank);
+					rankUI.rank_txt.text = gamedata.getFullRank(currentLevel);
+					rankUI.title_txt.text = "Lawn - " + String(currentLevel);
+					break;
+				case "aboutUI" :
+					aboutUI.visible = true;
+					aboutUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
 					break;
 				case "menuUI" :
 					menuUI.visible = true;
 					menuUI.select_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).selectLevel);
+					menuUI.about_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).goAbout);
 					menuUI.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).exitProgram);
-					menuUI.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).showRank);
 					break;
 			}
 		}
@@ -81,6 +116,11 @@
 		{
 			showUI("menuUI");
 			gotoAndStop(1);
+		}
+		public function goAbout(Event:TouchEvent)
+		{
+			showUI("aboutUI");
+			gotoAndStop(2);
 		}
 		public function returnLevel(Event:TouchEvent)
 		{
@@ -95,9 +135,15 @@
 			showUI("levelUI");
 			gotoAndStop(2);
 		}
-		public function showRank(Event:TouchEvent)
+		public function showRank(event:TouchEvent)
 		{
+			currentLevel = levelIcons.indexOf(event.target.parent)+1;
 			showUI("rankUI");
+			gotoAndStop(2);
+		}
+		public function exitRank(event:TouchEvent)
+		{
+			showUI("levelUI");
 			gotoAndStop(2);
 		}
 		public function exitProgram(Event:TouchEvent)
@@ -109,11 +155,12 @@
 		{
 			removeChild(parsys);
 			removeChild(gameUI);
-			c_chickSpeed = 0;
 			stop_game_motion();
 			parsys.resetStats();
 			gotoAndStop(2);
 			showUI("levelUI");
+			c_chickSpeed = 0;
+			score = 0;
 			remainTime = 0;
 		}
 		public function resumeGame(Event:TouchEvent)
@@ -148,17 +195,20 @@
 			pbomb.y = 500;
 			pbomb.gotoAndPlay(1);
 		}
-		public function timeMode(Event:TouchEvent)
+		public function startLevel(event:TouchEvent)
 		{
 			currentMode = "time";
-			parsys.generate(80,40,5,10);
-			add_game_motion();
-			chickSpeed = 12;
+			currentLevel = levelIcons.indexOf(event.target.parent)+1;
+			var lev:XML = leveldata.level[currentLevel-1];
+			parsys.basicSpeed = lev.basicspeed;
+			parsys.generate(lev.normal,lev.time,lev.bomb,lev.golden,lev.threshold,lev.imaginespeed);
+			chickSpeed = lev.chickspeed;
+			remainTime = lev.time;
 			gotoAndStop(3);
 			gameUI.tscore.text = String(score);
-			remainTime = timeMode_time;
 			gameUI.ttime.text = stomin(remainTime);
 			gameUI.tcombo.text = "";
+			add_game_motion();
 			addChickenListener();
 		}
 		public function gameOver()
@@ -173,14 +223,13 @@
 		{
 			var result:String = score + "\r";
 			var bonus:int = 0;
-			result +=  String(parsys.caught) + " / " + String(parsys.miss + parsys.caught) + "\r";
-			if (parsys.miss < 15)
-			{
-				bonus +=  (15 - parsys.miss) * 3;
-			}
-			bonus +=  parsys.maxcombo * 3;
+			result +=  String(parsys.caught) + "/" + String(parsys.miss + parsys.caught) + "\r";
+			var ratio:Number = parsys.caught/(parsys.miss + parsys.caught);
+			bonus = ratio > 0.8 ? bonus + int(ratio * 250) - 200:bonus;
+			//trace(ratio,int(ratio * 250) - 200);
+			bonus +=  int(parsys.maxcombo * 0.6);
 			result +=  String(parsys.maxcombo) + "\r" + String(bonus);
-			score += bonus;
+			score +=  bonus;
 			return result;
 		}
 		public function gameTimer():void

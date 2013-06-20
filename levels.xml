@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<leveldata>
+<level label="1">
+	<random>true</random>
+	<title>Trial</title>
+	<description>This is a trial</description>
+	<time>45</time>
+	<normal>70</normal>
+	<bomb>5</bomb>
+	<golden>20</golden>
+	<chickspeed>12</chickspeed>
+	<basicspeed>7</basicspeed>
+	<threshold>0.4</threshold>
+	<imaginespeed>15</imaginespeed>
+</level>
+<level label="2">
+	<random>true</random>
+	<title>Quick</title>
+	<description>This is a trial</description>
+	<time>60</time>
+	<normal>240</normal>
+	<bomb>0</bomb>
+	<golden>0</golden>
+	<chickspeed>15</chickspeed>
+	<basicspeed>10</basicspeed>
+	<threshold>0.8</threshold>
+	<imaginespeed>20</imaginespeed>
+</level>
+</leveldata>
