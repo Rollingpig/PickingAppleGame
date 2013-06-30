@@ -5,7 +5,6 @@
 	import flash.events.TouchEvent;
 	import flash.events.TimerEvent;
 	import particleSystem;
-	import fpsCatcher;
 	import gameData;
 	import flash.utils.Timer;
 	import flash.ui.Multitouch;
@@ -22,10 +21,9 @@
 		private var c_chickSpeed:int = 0;
 		public var score:int = 0;
 		public var remainTime:int = 10;
-		public var currentMode:String = "harmony";
+		
 		private var papple:apple = new apple();
 		private var pbomb:bomb = new bomb();
-		public var fpsCat:fpsCatcher = new fpsCatcher();
 		public var gamedata:gameData = new gameData();
 		public var currentLevel:int = 1;
 
@@ -33,20 +31,17 @@
 		public var leveldata:XML;
 		public var levelIcons:Array = new Array  ;
 
-		private var uis:Array = new Array();
 		public var levelUI:level_ui = new level_ui();
 		public var menuUI:menu_ui = new menu_ui();
 		public var rankUI:rank_ui = new rank_ui();
 		public var aboutUI:about_ui = new about_ui();
+		private var uis:Array = new Array(menuUI,levelUI,rankUI,aboutUI);
 
 		public function pickApple()
 		{
 			stop();
-			fpsCat.y = 520;
-			addChild(fpsCat);
 			addChild(parsys);
 			parsys.initParticle(papple);
-			uis.push(menuUI,levelUI,rankUI,aboutUI);
 			showUI("menuUI");
 			settingload.load(new URLRequest("levels.xml"));
 			settingload.addEventListener(Event.COMPLETE,levelSetting_handler);
@@ -56,7 +51,7 @@
 		{
 			leveldata = XML(settingload.data);
 			var total:int = 0;
-			var cy :int = 150;
+			var cy:int = 150;
 			for each (var prop:XML in leveldata.level)
 			{
 				total++;
@@ -67,27 +62,25 @@
 				p.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
 				p.x = 50;
 				p.y = cy;
-				cy += 150;
+				cy +=  110;
 				levelIcons.push(p);
 			}
 		}
-		/*
-		functions for buttons
-		*/
 		private function showUI(tname:String):void
 		{
 			for (var i:int = 0; i< uis.length; i++)
 			{
-				topLayer.addChild(uis[i]);
 				uis[i].visible = false;
+				topLayer.addChild(uis[i]);
 			}
 			switch (tname)
 			{
 				case "levelUI" :
-					uis[1].visible = true;
+					levelUI.visible = true;
 					levelUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
-					for(var j:int = 0;j<levelIcons.length;j++){
-						if(! levelUI.contains(levelIcons[j]))
+					for (var j:int = 0; j<levelIcons.length; j++)
+					{
+						if (! levelUI.contains(levelIcons[j]))
 						{
 							levelUI.addChild(levelIcons[j]);
 						}
@@ -103,6 +96,7 @@
 				case "aboutUI" :
 					aboutUI.visible = true;
 					aboutUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					aboutUI.backdoor_btn.addEventListener(TouchEvent.TOUCH_TAP,backdoor);
 					break;
 				case "menuUI" :
 					menuUI.visible = true;
@@ -112,6 +106,9 @@
 					break;
 			}
 		}
+		/*
+		functions for buttons
+		*/
 		public function returnHome(Event:TouchEvent)
 		{
 			showUI("menuUI");
@@ -126,7 +123,6 @@
 		{
 			parsys.resetStats();
 			gamedata.addRankResult(scoreUI.name_txt.text,score,currentLevel);
-			score = 0;
 			gotoAndStop(2);
 			showUI("levelUI");
 		}
@@ -137,7 +133,7 @@
 		}
 		public function showRank(event:TouchEvent)
 		{
-			currentLevel = levelIcons.indexOf(event.target.parent)+1;
+			currentLevel = levelIcons.indexOf(event.target.parent) + 1;
 			showUI("rankUI");
 			gotoAndStop(2);
 		}
@@ -159,9 +155,6 @@
 			parsys.resetStats();
 			gotoAndStop(2);
 			showUI("levelUI");
-			c_chickSpeed = 0;
-			score = 0;
-			remainTime = 0;
 		}
 		public function resumeGame(Event:TouchEvent)
 		{
@@ -174,6 +167,17 @@
 			stop_game_motion();
 			removeChickenListener();
 			gameUI.gotoAndStop(2);
+		}
+		public function backdoor(Event:TouchEvent)
+		{
+			var s:String = aboutUI.back_txt.text;
+			var command:Array = s.split("#");
+			switch(command[0])
+			{
+				case "clearlevel":
+				gamedata.clearLevelResult(int(command[1]));
+				break;
+			}
 		}
 		/*
 		basic function for game
@@ -197,26 +201,38 @@
 		}
 		public function startLevel(event:TouchEvent)
 		{
-			currentMode = "time";
-			currentLevel = levelIcons.indexOf(event.target.parent)+1;
-			var lev:XML = leveldata.level[currentLevel-1];
+			c_chickSpeed = 0;
+			score = 0;
+			currentLevel = levelIcons.indexOf(event.target.parent) + 1;
+			var lev:XML = leveldata.level[currentLevel - 1];
 			parsys.basicSpeed = lev.basicspeed;
-			parsys.generate(lev.normal,lev.time,lev.bomb,lev.golden,lev.threshold,lev.imaginespeed);
+			if(lev.random == true)
+			{
+				parsys.generate(lev.normal,lev.time,lev.bomb,lev.golden,lev.threshold,lev.imaginespeed);
+			}else{
+				parsys.loadLocal();
+			}
 			chickSpeed = lev.chickspeed;
 			remainTime = lev.time;
 			gotoAndStop(3);
+			parsys.hitZone = Object(root).chicken.hitBasket;
+			addChild(parsys);
+			addChild(gameUI);
 			gameUI.tscore.text = String(score);
 			gameUI.ttime.text = stomin(remainTime);
 			gameUI.tcombo.text = "";
 			add_game_motion();
 			addChickenListener();
 		}
-		public function gameOver()
+		public function saveLevel(event:TouchEvent)
+		{
+			parsys.saveLevel();
+		}
+		public function gameOver():void
 		{
 			gotoAndStop(4);
 			removeChild(parsys);
 			removeChild(gameUI);
-			c_chickSpeed = 0;
 			stop_game_motion();
 		}
 		public function gameAnalyze():String

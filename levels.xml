@@ -15,8 +15,8 @@
 </level>
 <level label="2">
 	<random>true</random>
-	<title>Quick</title>
-	<description>This is a trial</description>
+	<title>Quick Response</title>
+	<description>Move as quick as possible!</description>
 	<time>60</time>
 	<normal>240</normal>
 	<bomb>0</bomb>
@@ -25,5 +25,24 @@
 	<basicspeed>10</basicspeed>
 	<threshold>0.8</threshold>
 	<imaginespeed>20</imaginespeed>
+</level>
+<level label="3">
+	<random>true</random>
+	<title>Beware of Bombs!</title>
+	<description>When bombs come, can stars far behind?</description>
+	<time>45</time>
+	<normal>10</normal>
+	<bomb>100</bomb>
+	<golden>20</golden>
+	<chickspeed>12</chickspeed>
+	<basicspeed>7</basicspeed>
+	<threshold>0.4</threshold>
+	<imaginespeed>15</imaginespeed>
+</level>
+<level label="4">
+	<random>false</random>
+	<title>Beware of Bombs!</title>
+	<description>When bombs come, can stars far behind?</description>
+	<path>custom100.txt</path>
 </level>
 </leveldata>

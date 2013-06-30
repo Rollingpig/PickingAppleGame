@@ -5,6 +5,7 @@
 	import flash.events.Event;
 	import flash.display.DisplayObject;
 	import flash.errors.IOError;
+	import flash.filesystem.*;
 	import particleData;
 
 	public class particleSystem extends Sprite
@@ -27,6 +28,9 @@
 		public var miss:int = 0;
 		public var combo:int = 0;
 		public var maxcombo:int = 0;
+		
+		private var file:File = File.applicationStorageDirectory;
+		private var fileStream:FileStream = new FileStream();
 
 		public function particleSystem()
 		{
@@ -107,6 +111,27 @@
 				temp.type = "gold";
 				motion.push(temp);
 			}
+		}
+		public function loadLocal(path:String = "level.dat"):void
+		{
+			file = File.applicationStorageDirectory.resolvePath(path);
+			try
+			{
+				fileStream.open(file, FileMode.READ);
+				motion = fileStream.readObject();
+				fileStream.close();
+			}
+			catch (error:IOError)
+			{
+			}
+		}
+		public function saveLevel():void
+		{
+			var k:int = Math.random() * 1000;
+			file = File.applicationStorageDirectory.resolvePath("custom"+String(k)+".txt");
+			fileStream.open(file, FileMode.WRITE);
+			fileStream.writeObject(motion);
+			fileStream.close();
 		}
 		private function particle_motion(event:Event):void
 		{
@@ -191,6 +216,7 @@
 			caught = 0;
 			motion.length = 0;
 			runFrame = 0;
+			particlePoint = 0;
 			for (var i = 0; i < libAmount; i++)
 			{
 				particleLib[i].visible = false;

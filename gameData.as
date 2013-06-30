@@ -4,16 +4,16 @@
 	import flash.errors.IOError;
 	public class gameData
 	{
-		private var file:File = File.applicationStorageDirectory;
+		private var rankfile:File = File.applicationStorageDirectory;
 		private var fileStream:FileStream = new FileStream();
 		public var ranklist:Array = new Array();
 
 		public function gameData()
 		{
-			file = file.resolvePath("rank.txt");
+			rankfile = rankfile.resolvePath("rank.txt");
 			try
 			{
-				fileStream.open(file, FileMode.READ);
+				fileStream.open(rankfile, FileMode.READ);
 				ranklist = fileStream.readObject();
 				fileStream.close();
 			}
@@ -50,13 +50,13 @@
 		}
 		public function writeRanklist():void
 		{
-			fileStream.open(file, FileMode.WRITE);
+			fileStream.open(rankfile, FileMode.WRITE);
 			fileStream.writeObject(ranklist);
 			fileStream.close();
 		}
 		public function addRankResult(new_name:String,new_score:int,level:int = 1):void
 		{
-			trace(ranklist[level]);
+			//trace(ranklist[level]);
 			ranklist[level].push({name:new_name,score:new_score});
 			ranklist[level].sortOn("score",Array.DESCENDING | Array.NUMERIC);
 			if (ranklist[level].length > 25)
@@ -64,7 +64,10 @@
 				ranklist[level].length = 25;
 			}
 		}
-
+		public function clearLevelResult(level:int):void
+		{
+			ranklist[level].length = 0;
+		}
 	}
 
 }
