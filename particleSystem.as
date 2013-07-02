@@ -125,13 +125,14 @@
 			{
 			}
 		}
-		public function saveLevel():void
+		public function saveLevel(label:int):String
 		{
-			var k:int = Math.random() * 1000;
-			file = File.applicationStorageDirectory.resolvePath("custom"+String(k)+".txt");
+			var path:String = "custom" + String(label+1) + ".txt";
+			file = File.applicationStorageDirectory.resolvePath(path);
 			fileStream.open(file, FileMode.WRITE);
 			fileStream.writeObject(motion);
 			fileStream.close();
+			return path;
 		}
 		private function particle_motion(event:Event):void
 		{
@@ -142,7 +143,7 @@
 			}
 			for (var i:int = 0; i < motion.length; i++)
 			{
-				if (runFrame > motion[i].dropFrame && motion[i].used == false)
+				if (runFrame > motion[i].dropFrame && motion[i].p !== null)
 				{
 					if (motion[i].p.hitTestObject(hitZone))
 					{
@@ -163,8 +164,7 @@
 								break;
 						}
 						motion[i].p.visible = false;
-						motion[i].dropFrame = 10000;
-						//motion[i].p = null;
+						motion[i].p = null;
 					}
 					else if (motion[i].p.y > layerHeight)
 					{
@@ -179,8 +179,7 @@
 								break;
 						}
 						motion[i].p.visible = false;
-						motion[i].used = true;
-						//motion[i].p = null;
+						motion[i].p = null;
 					}
 					else
 					{

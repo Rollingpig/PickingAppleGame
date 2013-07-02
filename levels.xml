@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<leveldata>
+<leveldata total="4">
 <level label="1">
 	<random>true</random>
 	<title>Trial</title>
@@ -38,11 +38,5 @@
 	<basicspeed>7</basicspeed>
 	<threshold>0.4</threshold>
 	<imaginespeed>15</imaginespeed>
-</level>
-<level label="4">
-	<random>false</random>
-	<title>Beware of Bombs!</title>
-	<description>When bombs come, can stars far behind?</description>
-	<path>custom100.txt</path>
 </level>
 </leveldata>

@@ -21,14 +21,13 @@
 		private var c_chickSpeed:int = 0;
 		public var score:int = 0;
 		public var remainTime:int = 10;
+		public var leveldat:Object = {time:0,chickspeed:0};
 		
 		private var papple:apple = new apple();
 		private var pbomb:bomb = new bomb();
 		public var gamedata:gameData = new gameData();
 		public var currentLevel:int = 1;
 
-		private var settingload:URLLoader = new URLLoader  ;
-		public var leveldata:XML;
 		public var levelIcons:Array = new Array  ;
 
 		public var levelUI:level_ui = new level_ui();
@@ -42,17 +41,15 @@
 			stop();
 			addChild(parsys);
 			parsys.initParticle(papple);
+			levelSettingHandler();
 			showUI("menuUI");
-			settingload.load(new URLRequest("levels.xml"));
-			settingload.addEventListener(Event.COMPLETE,levelSetting_handler);
 			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
 		}
-		function levelSetting_handler(event:Event):void
+		function levelSettingHandler():void
 		{
-			leveldata = XML(settingload.data);
 			var total:int = 0;
 			var cy:int = 150;
-			for each (var prop:XML in leveldata.level)
+			for each (var prop:XML in gamedata.leveldata.level)
 			{
 				total++;
 				var p:levelIcon = new levelIcon();
@@ -204,16 +201,18 @@
 			c_chickSpeed = 0;
 			score = 0;
 			currentLevel = levelIcons.indexOf(event.target.parent) + 1;
-			var lev:XML = leveldata.level[currentLevel - 1];
-			parsys.basicSpeed = lev.basicspeed;
+			var lev:XML = gamedata.leveldata.level[currentLevel - 1];
 			if(lev.random == true)
 			{
+				parsys.basicSpeed = lev.basicspeed;
 				parsys.generate(lev.normal,lev.time,lev.bomb,lev.golden,lev.threshold,lev.imaginespeed);
 			}else{
-				parsys.loadLocal();
+				parsys.loadLocal(lev.path);
 			}
 			chickSpeed = lev.chickspeed;
 			remainTime = lev.time;
+			leveldat.time = remainTime;
+			leveldat.chickspeed = chickSpeed;
 			gotoAndStop(3);
 			parsys.hitZone = Object(root).chicken.hitBasket;
 			addChild(parsys);
@@ -224,9 +223,10 @@
 			add_game_motion();
 			addChickenListener();
 		}
-		public function saveLevel(event:TouchEvent)
+		public function saveLevel(event:TouchEvent):void
 		{
-			parsys.saveLevel();
+			var path:String = parsys.saveLevel(gamedata.leveldata.@total);
+			gamedata.addLevel(path,leveldat.time,leveldat.chickspeed);
 		}
 		public function gameOver():void
 		{

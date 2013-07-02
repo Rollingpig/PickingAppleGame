@@ -5,12 +5,18 @@
 	public class gameData
 	{
 		private var rankfile:File = File.applicationStorageDirectory;
+		private var levelfile:File = File.documentsDirectory;
+		private var originLevel:File = File.applicationDirectory;
+
 		private var fileStream:FileStream = new FileStream();
 		public var ranklist:Array = new Array();
+		public var leveldata:XML;
 
 		public function gameData()
 		{
 			rankfile = rankfile.resolvePath("rank.txt");
+			levelfile = levelfile.resolvePath("levels.xml");
+			originLevel = originLevel.resolvePath("levels.xml");
 			try
 			{
 				fileStream.open(rankfile, FileMode.READ);
@@ -19,9 +25,20 @@
 			}
 			catch (error:IOError)
 			{
-				trace("not found");
-				ranklist.push(new Array,new Array,new Array,new Array,new Array);
+				trace("Data not found");
+				ranklist.push(new Array);
 			}
+			try
+			{
+				originLevel.copyTo(levelfile,false);
+			}
+			catch (error:IOError)
+			{
+				trace("Levelfile already exsists.");
+			}
+			fileStream.open(levelfile, FileMode.READ);
+			leveldata = XML(fileStream.readUTFBytes(fileStream.bytesAvailable));
+			fileStream.close();
 		}
 		public function getFullRank(level:int = 1):String
 		{
@@ -38,6 +55,9 @@
 		public function getHighest(level:int = 1):String
 		{
 			var temp:String = "";
+			if(level > ranklist.length - 1){
+				ranklist.push(new Array);
+			}
 			if (ranklist[level].length !== 0)
 			{
 				temp = String(ranklist[level][0].score);
@@ -53,6 +73,9 @@
 			fileStream.open(rankfile, FileMode.WRITE);
 			fileStream.writeObject(ranklist);
 			fileStream.close();
+			fileStream.open(levelfile, FileMode.WRITE);
+			fileStream.writeUTFBytes(String(leveldata));
+			fileStream.close();
 		}
 		public function addRankResult(new_name:String,new_score:int,level:int = 1):void
 		{
@@ -67,6 +90,26 @@
 		public function clearLevelResult(level:int):void
 		{
 			ranklist[level].length = 0;
+		}
+		public function addLevel(newpath:String,newtime:int,speed:int):void
+		{
+			var newlevel:XML =  
+			    <level label="0">
+					<random>false</random>
+					<title>untitle</title>
+					<description>none</description>
+					<time>10</time>
+					<chickspeed>10</chickspeed>
+					<path>newpath</path>
+				</level>;
+			leveldata.@total = int(leveldata.@total) + 1;
+			newlevel.path = newpath;
+			newlevel.time = newtime;
+			newlevel.chickspeed = speed;
+			newlevel.@label = leveldata.@total;
+			leveldata.appendChild(newlevel);
+			trace(leveldata);
+			ranklist.push(new Array);
 		}
 	}
 
