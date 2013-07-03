@@ -15,7 +15,7 @@
 		public function gameData()
 		{
 			rankfile = rankfile.resolvePath("rank.txt");
-			levelfile = levelfile.resolvePath("levels.xml");
+			levelfile = levelfile.resolvePath("pickapple/levels.xml");
 			originLevel = originLevel.resolvePath("levels.xml");
 			try
 			{
@@ -91,7 +91,7 @@
 		{
 			ranklist[level].length = 0;
 		}
-		public function addLevel(newpath:String,newtime:int,speed:int):void
+		public function addLevel(newtitle:String,newpath:String,newtime:int,speed:int):void
 		{
 			var newlevel:XML =  
 			    <level label="0">
@@ -105,11 +105,27 @@
 			leveldata.@total = int(leveldata.@total) + 1;
 			newlevel.path = newpath;
 			newlevel.time = newtime;
+			newlevel.title = newtitle;
 			newlevel.chickspeed = speed;
 			newlevel.@label = leveldata.@total;
 			leveldata.appendChild(newlevel);
 			trace(leveldata);
 			ranklist.push(new Array);
+		}
+		public function deleteLevel(tlabel:int):void
+		{
+			trace(tlabel);
+			delete leveldata.level.(@label == String(tlabel))[0];
+			for each (var lev:XML in leveldata.level)
+			{
+				if(int(lev.@label)>tlabel)
+				{
+					lev.@label = int(lev.@label)-1;
+				}
+			}
+			ranklist.splice(tlabel,1);
+			leveldata.@total = int(leveldata.@total) - 1;
+			//trace(leveldata);
 		}
 	}
 

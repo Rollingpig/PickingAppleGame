@@ -48,18 +48,19 @@
 		function levelSettingHandler():void
 		{
 			var total:int = 0;
-			var cy:int = 150;
+			var cy:int = 130;
 			for each (var prop:XML in gamedata.leveldata.level)
 			{
 				total++;
 				var p:levelIcon = new levelIcon();
 				p.high_txt.text = gamedata.getHighest(total);
 				p.label_txt.text = String(total);
+				p.title_txt.text = prop.title;
 				p.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,showRank);
 				p.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
-				p.x = 50;
+				p.x = (480-400)/2;
 				p.y = cy;
-				cy +=  110;
+				cy +=  90;
 				levelIcons.push(p);
 			}
 		}
@@ -174,6 +175,12 @@
 				case "clearlevel":
 				gamedata.clearLevelResult(int(command[1]));
 				break;
+				case "deletelevel":
+				gamedata.deleteLevel(int(command[1]));
+				break;
+				case "tl":
+				trace(gamedata.leveldata);
+				break;
 			}
 		}
 		/*
@@ -226,7 +233,7 @@
 		public function saveLevel(event:TouchEvent):void
 		{
 			var path:String = parsys.saveLevel(gamedata.leveldata.@total);
-			gamedata.addLevel(path,leveldat.time,leveldat.chickspeed);
+			gamedata.addLevel("Custom",path,leveldat.time,leveldat.chickspeed);
 		}
 		public function gameOver():void
 		{

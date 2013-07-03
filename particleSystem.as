@@ -29,7 +29,7 @@
 		public var combo:int = 0;
 		public var maxcombo:int = 0;
 		
-		private var file:File = File.applicationStorageDirectory;
+		private var file:File = File.documentsDirectory;
 		private var fileStream:FileStream = new FileStream();
 
 		public function particleSystem()
@@ -114,7 +114,8 @@
 		}
 		public function loadLocal(path:String = "level.dat"):void
 		{
-			file = File.applicationStorageDirectory.resolvePath(path);
+			file = File.documentsDirectory.resolvePath(path);
+			//path has included "pickapple/" prefix;
 			try
 			{
 				fileStream.open(file, FileMode.READ);
@@ -127,8 +128,8 @@
 		}
 		public function saveLevel(label:int):String
 		{
-			var path:String = "custom" + String(label+1) + ".txt";
-			file = File.applicationStorageDirectory.resolvePath(path);
+			var path:String = "pickapple/custom" + String(label+1) + ".dat";
+			file = File.documentsDirectory.resolvePath(path);
 			fileStream.open(file, FileMode.WRITE);
 			fileStream.writeObject(motion);
 			fileStream.close();
