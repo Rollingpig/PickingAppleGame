@@ -10,7 +10,7 @@
 
 	public class particleSystem extends Sprite
 	{
-		private var motion:Array = new Array  ;
+		private var motion:Vector.<Object> = new Vector.<Object>;
 		private var particleLib:Array = new Array  ;
 		private const libAmount:int = 20;
 		private var particlePoint:int = 0;

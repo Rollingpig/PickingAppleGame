@@ -3,16 +3,15 @@
 
 	import flash.display.MovieClip;
 	import flash.events.TouchEvent;
-	import flash.events.TimerEvent;
 	import particleSystem;
 	import gameData;
-	import flash.utils.Timer;
 	import flash.ui.Multitouch;
 	import flash.ui.MultitouchInputMode;
 	import flash.events.Event;
 	import flash.desktop.NativeApplication;
 	import flash.net.URLRequest;
-	import flash.net.URLLoader;
+	import flash.display.Loader;
+	import flash.events.IOErrorEvent;
 
 	public class pickApple extends MovieClip
 	{
@@ -22,7 +21,8 @@
 		public var score:int = 0;
 		public var remainTime:int = 10;
 		public var leveldat:Object = {time:0,chickspeed:0};
-		
+		private var savetime:int = 0;
+
 		private var papple:apple = new apple();
 		private var pbomb:bomb = new bomb();
 		public var gamedata:gameData = new gameData();
@@ -35,6 +35,7 @@
 		public var rankUI:rank_ui = new rank_ui();
 		public var aboutUI:about_ui = new about_ui();
 		private var uis:Array = new Array(menuUI,levelUI,rankUI,aboutUI);
+		private var bgLoader:Loader = new Loader();
 
 		public function pickApple()
 		{
@@ -45,10 +46,21 @@
 			showUI("menuUI");
 			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
 		}
+		/*
+		layout
+		*/
 		function levelSettingHandler():void
 		{
 			var total:int = 0;
 			var cy:int = 130;
+			for (var i:int = 0; i<levelIcons.length; i++)
+			{
+				if (levelUI.contains(levelIcons[i]))
+				{
+					levelUI.removeChild(levelIcons[i]);
+				}
+			}
+			levelIcons.length = 0;
 			for each (var prop:XML in gamedata.leveldata.level)
 			{
 				total++;
@@ -58,7 +70,7 @@
 				p.title_txt.text = prop.title;
 				p.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,showRank);
 				p.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
-				p.x = (480-400)/2;
+				p.x = (480 - 400) / 2;
 				p.y = cy;
 				cy +=  90;
 				levelIcons.push(p);
@@ -84,6 +96,7 @@
 						}
 						levelIcons[j].high_txt.text = gamedata.getHighest(j+1);
 					}
+
 					break;
 				case "rankUI" :
 					rankUI.visible = true;
@@ -103,6 +116,27 @@
 					menuUI.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).exitProgram);
 					break;
 			}
+		}
+		public function gameLayout():void
+		{
+			gotoAndStop(3);
+			parsys.hitZone = Object(root).chicken.hitBasket;
+			addChild(parsys);
+			addChild(gameUI);
+			gameUI.tscore.text = String(score);
+			gameUI.ttime.text = stomin(remainTime);
+			gameUI.tcombo.text = "";
+			add_game_motion();
+			addChickenListener();
+		}
+		private function bgCompleteHandler(event:Event):void
+		{
+			gameLayout();
+			gamebg.addChild(bgLoader);
+		}
+		private function bgFailHandler(event:Event):void
+		{
+			gameLayout();
 		}
 		/*
 		functions for buttons
@@ -170,17 +204,79 @@
 		{
 			var s:String = aboutUI.back_txt.text;
 			var command:Array = s.split("#");
-			switch(command[0])
+			switch (command[0])
 			{
-				case "clearlevel":
-				gamedata.clearLevelResult(int(command[1]));
-				break;
-				case "deletelevel":
-				gamedata.deleteLevel(int(command[1]));
-				break;
-				case "tl":
-				trace(gamedata.leveldata);
-				break;
+				case "clr" :
+					gamedata.clearLevelResult(int(command[1]));
+					break;
+				case "del" :
+					if (gamedata.deleteLevel(int(command[1])))
+					{
+						levelSettingHandler();
+					}
+					break;
+				case "tl" :
+					trace(gamedata.leveldata);
+					break;
+			}
+		}
+		public function startLevel(event:TouchEvent)
+		{
+			c_chickSpeed = 0;
+			score = 0;
+			savetime = 0;
+			currentLevel = levelIcons.indexOf(event.target.parent) + 1;
+			var lev:XML = gamedata.leveldata.level[currentLevel - 1];
+			if (lev.random == true)
+			{
+				parsys.basicSpeed = lev.basicspeed;
+				parsys.generate(lev.normal,lev.time,lev.bomb,lev.golden,lev.threshold,lev.imaginespeed);
+			}
+			else
+			{
+				parsys.loadLocal(lev.path);
+			}
+			chickSpeed = lev.chickspeed;
+			remainTime = lev.time;
+			leveldat.time = remainTime;
+			leveldat.chickspeed = chickSpeed;
+			bgLoader.unload();
+			bgLoader.load(new URLRequest(lev.background));
+			bgLoader.contentLoaderInfo.addEventListener(Event.COMPLETE,bgCompleteHandler);
+			bgLoader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,bgFailHandler);
+		}
+		public function saveLevel(event:TouchEvent):void
+		{
+			if (savetime == 0)
+			{
+				var path:String = parsys.saveLevel(gamedata.leveldata. @ total);
+				gamedata.addLevel("Custom",path,leveldat.time,leveldat.chickspeed);
+				levelSettingHandler();
+				savetime++;
+			}
+			else if (savetime < 3)
+			{
+				savetime++;
+			}
+			else if (savetime >= 3 && savetime < 10)
+			{
+				scoreUI.name_txt.text = "再按的是查大爷";
+				savetime++;
+			}
+			else if (savetime >= 10 && savetime < 50)
+			{
+				scoreUI.name_txt.text = "你是查大爷";
+				savetime++;
+			}
+			else if (savetime >= 50 && savetime < 100)
+			{
+				scoreUI.name_txt.text = "原来是刚烈";
+				savetime++;
+			}
+			else
+			{
+				scoreUI.name_txt.text = "小雨？";
+				savetime++;
 			}
 		}
 		/*
@@ -202,38 +298,6 @@
 			pbomb.x = tx;
 			pbomb.y = 500;
 			pbomb.gotoAndPlay(1);
-		}
-		public function startLevel(event:TouchEvent)
-		{
-			c_chickSpeed = 0;
-			score = 0;
-			currentLevel = levelIcons.indexOf(event.target.parent) + 1;
-			var lev:XML = gamedata.leveldata.level[currentLevel - 1];
-			if(lev.random == true)
-			{
-				parsys.basicSpeed = lev.basicspeed;
-				parsys.generate(lev.normal,lev.time,lev.bomb,lev.golden,lev.threshold,lev.imaginespeed);
-			}else{
-				parsys.loadLocal(lev.path);
-			}
-			chickSpeed = lev.chickspeed;
-			remainTime = lev.time;
-			leveldat.time = remainTime;
-			leveldat.chickspeed = chickSpeed;
-			gotoAndStop(3);
-			parsys.hitZone = Object(root).chicken.hitBasket;
-			addChild(parsys);
-			addChild(gameUI);
-			gameUI.tscore.text = String(score);
-			gameUI.ttime.text = stomin(remainTime);
-			gameUI.tcombo.text = "";
-			add_game_motion();
-			addChickenListener();
-		}
-		public function saveLevel(event:TouchEvent):void
-		{
-			var path:String = parsys.saveLevel(gamedata.leveldata.@total);
-			gamedata.addLevel("Custom",path,leveldat.time,leveldat.chickspeed);
 		}
 		public function gameOver():void
 		{

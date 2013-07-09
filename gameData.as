@@ -112,9 +112,10 @@
 			trace(leveldata);
 			ranklist.push(new Array);
 		}
-		public function deleteLevel(tlabel:int):void
+		public function deleteLevel(tlabel:int):Boolean
 		{
-			trace(tlabel);
+			var file:File = File.documentsDirectory;
+			file = file.resolvePath(leveldata.level.(@label == String(tlabel)).path);
 			delete leveldata.level.(@label == String(tlabel))[0];
 			for each (var lev:XML in leveldata.level)
 			{
@@ -125,7 +126,16 @@
 			}
 			ranklist.splice(tlabel,1);
 			leveldata.@total = int(leveldata.@total) - 1;
-			//trace(leveldata);
+			try
+			{
+				file.deleteFile();
+			}
+			catch (error:IOError)
+			{
+				//none
+			}
+			trace("done")
+			return true;
 		}
 	}
 

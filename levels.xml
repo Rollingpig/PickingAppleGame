@@ -4,6 +4,7 @@
 	<random>true</random>
 	<title>Trial</title>
 	<description>This is a trial</description>
+	<background>level1.png</background>
 	<time>45</time>
 	<normal>70</normal>
 	<bomb>5</bomb>
@@ -17,12 +18,13 @@
 	<random>true</random>
 	<title>Quick Response</title>
 	<description>Move as quick as possible!</description>
-	<time>60</time>
-	<normal>240</normal>
+	<background>level1.png</background>
+	<time>45</time>
+	<normal>200</normal>
 	<bomb>0</bomb>
 	<golden>0</golden>
 	<chickspeed>15</chickspeed>
-	<basicspeed>10</basicspeed>
+	<basicspeed>11</basicspeed>
 	<threshold>0.8</threshold>
 	<imaginespeed>20</imaginespeed>
 </level>
@@ -30,10 +32,25 @@
 	<random>true</random>
 	<title>Beware of Bombs!</title>
 	<description>When bombs come, can stars far behind?</description>
+	<background>level1.png</background>
 	<time>45</time>
 	<normal>10</normal>
 	<bomb>100</bomb>
 	<golden>20</golden>
+	<chickspeed>12</chickspeed>
+	<basicspeed>7</basicspeed>
+	<threshold>0.4</threshold>
+	<imaginespeed>15</imaginespeed>
+</level>
+<level label="4">
+	<random>true</random>
+	<title>Try Painting</title>
+	<description>This is a trial</description>
+	<background>level2.png</background>
+	<time>45</time>
+	<normal>50</normal>
+	<bomb>0</bomb>
+	<golden>30</golden>
 	<chickspeed>12</chickspeed>
 	<basicspeed>7</basicspeed>
 	<threshold>0.4</threshold>
