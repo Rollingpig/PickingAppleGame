@@ -20,7 +20,7 @@
 		private var c_chickSpeed:int = 0;
 		public var score:int = 0;
 		public var remainTime:int = 10;
-		public var leveldat:Object = {time:0,chickspeed:0};
+		public var leveldat:XML;
 		private var savetime:int = 0;
 
 		private var papple:apple = new apple();
@@ -154,6 +154,7 @@
 		public function returnLevel(Event:TouchEvent)
 		{
 			parsys.resetStats();
+			parsys.clearMotion();
 			gamedata.addRankResult(scoreUI.name_txt.text,score,currentLevel);
 			gotoAndStop(2);
 			showUI("levelUI");
@@ -238,19 +239,33 @@
 			}
 			chickSpeed = lev.chickspeed;
 			remainTime = lev.time;
-			leveldat.time = remainTime;
-			leveldat.chickspeed = chickSpeed;
+			leveldat = lev;
 			bgLoader.unload();
 			bgLoader.load(new URLRequest(lev.background));
 			bgLoader.contentLoaderInfo.addEventListener(Event.COMPLETE,bgCompleteHandler);
 			bgLoader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,bgFailHandler);
+		}
+		public function replayLevel(event:TouchEvent)
+		{
+			c_chickSpeed = 0;
+			score = 0;
+			savetime = 0;
+			parsys.resetStats();
+			chickSpeed = leveldat.chickspeed;
+			remainTime = leveldat.time;
+			gameUI.tscore.text = String(score);
+			gameUI.ttime.text = stomin(remainTime);
+			gameUI.tcombo.text = "";
+			add_game_motion();
+			addChickenListener();
+			gameUI.gotoAndStop(1);
 		}
 		public function saveLevel(event:TouchEvent):void
 		{
 			if (savetime == 0)
 			{
 				var path:String = parsys.saveLevel(gamedata.leveldata. @ total);
-				gamedata.addLevel("Custom",path,leveldat.time,leveldat.chickspeed);
+				gamedata.addLevel("Custom",path,leveldat);
 				levelSettingHandler();
 				savetime++;
 			}

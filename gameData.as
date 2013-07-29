@@ -91,22 +91,13 @@
 		{
 			ranklist[level].length = 0;
 		}
-		public function addLevel(newtitle:String,newpath:String,newtime:int,speed:int):void
+		public function addLevel(newtitle:String,newpath:String,leveldat:XML):void
 		{
-			var newlevel:XML =  
-			    <level label="0">
-					<random>false</random>
-					<title>untitle</title>
-					<description>none</description>
-					<time>10</time>
-					<chickspeed>10</chickspeed>
-					<path>newpath</path>
-				</level>;
+			var newlevel:XML = leveldat.copy();
 			leveldata.@total = int(leveldata.@total) + 1;
 			newlevel.path = newpath;
-			newlevel.time = newtime;
+			newlevel.random = false;
 			newlevel.title = newtitle;
-			newlevel.chickspeed = speed;
 			newlevel.@label = leveldata.@total;
 			leveldata.appendChild(newlevel);
 			trace(leveldata);

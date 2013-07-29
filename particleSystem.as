@@ -214,7 +214,6 @@
 			miss = 0;
 			bomb = 0;
 			caught = 0;
-			motion.length = 0;
 			runFrame = 0;
 			particlePoint = 0;
 			for (var i = 0; i < libAmount; i++)
@@ -222,6 +221,10 @@
 				particleLib[i].visible = false;
 				particleLib[i].gotoAndStop(1);
 			}
+		}
+		public function clearMotion():void
+		{
+			motion.length = 0;
 		}
 		private function get_apple():void
 		{
