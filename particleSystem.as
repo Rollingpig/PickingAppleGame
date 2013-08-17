@@ -5,7 +5,9 @@
 	import flash.events.Event;
 	import flash.display.DisplayObject;
 	import flash.errors.IOError;
-	import flash.filesystem.*;
+	import flash.filesystem.File;
+	import flash.filesystem.FileStream;
+	import flash.filesystem.FileMode;
 	import particleData;
 
 	/**
@@ -27,9 +29,9 @@
 		 * "motion" is used to save the
 		 * motion data of the objects
 		*/
-		private var motion:Vector.<Object >  = new Vector.<Object >   ;
+		private var motion:Array = new Array;
 		/**
-		 * "particleLib" 是元件的库
+		 * "particleLib" 是苹果元件的库
 		 * 通过这个库，元件可以循环使用
 		 * "particleLib" is a library of 
 		 * the objects, these objects will be reused.
@@ -37,8 +39,11 @@
 		 * libAmount指particleLib的元件总数
 		*/
 		private var particleLib:Array = new Array  ;
-		private const libAmount:int = 20;
+		private const libAmount:int = 25;
 		private var particlePoint:int = 0;
+		private var special:MovieClip;
+		private var rear:int = 0;
+		private var head:int = 0;
 		
 		//记录运动序列已经进行到第几帧
 		private var runFrame:int = 0;
@@ -71,12 +76,16 @@
 		 * "initParticle" 初始化函数
 		 * 将实例化的元件加入particleLib
 		*/
-		public function initParticle(target:Object):void
+		public function initParticle(apple:Object,special:Object = null):void
 		{
 			particleLib.length = 0;
+			if (special !== null)
+			{
+				special = new special.constructor;
+			}			
 			for (var i = 0; i < libAmount; i++)
 			{
-				var particle:MovieClip = new target.constructor();
+				var particle:MovieClip = new apple.constructor();
 				particleLib.push(particle);
 				particle.visible = false;
 				this.addChild(particle);
@@ -146,14 +155,16 @@
 					deltaFrame = motion[i + 1].dropFrame - motion[i].dropFrame;
 				}
 				//由速度倒推出第i+1个苹果实际开始下落的时间
-				motion[i].dropFrame -=  int(chickHeight / motion[i].vy);
+				motion[i].reachFrame = motion[i].dropFrame;
+				motion[i].dropFrame -= int(chickHeight / motion[i].vy);
 			}
 			var temp:particleData;
 			for (i = 0; i < bombs; i++)
 			{
 				temp = new particleData  ;
 				temp.vy = Math.random() * 12 + basicSpeed;
-				temp.dropFrame = Math.random() * (totalFrame - beginFrame) + beginFrame - int(chickHeight / temp.vy);
+				temp.reachFrame = Math.random() * (totalFrame - beginFrame) + beginFrame;
+				temp.dropFrame = temp.reachFrame - int(chickHeight / temp.vy);
 				temp.type = "bomb";
 				temp.targetX = Math.random() * layerWidth;
 				motion.push(temp);
@@ -162,11 +173,13 @@
 			{
 				temp = new particleData  ;
 				temp.vy = Math.random() * 8 + basicSpeed + 5;
-				temp.dropFrame = Math.random() * (totalFrame - beginFrame) + beginFrame - int(chickHeight / temp.vy);
+				temp.reachFrame = Math.random() * (totalFrame - beginFrame) + beginFrame;
+				temp.dropFrame = temp.reachFrame - int(chickHeight / temp.vy);
 				temp.targetX = Math.random() * layerWidth;
 				temp.type = "gold";
 				motion.push(temp);
 			}
+			motion.sortOn("dropFrame",Array.NUMERIC);
 		}
 		/**
 		 * "loadLocal"函数将从文档位置（SD卡）
@@ -216,18 +229,43 @@
 			{
 				MovieClip(this.parent).gameTimer();
 			}
+			/*
+			 * 如果运行帧数大于等于元件的出发帧数
+			 * 则从particleLib中
+			 * 分配一个实例给motion[rear].p
+			 * 并把尾指针rear加1
+			*/
+			if (rear < motion.length && runFrame >= motion[rear].dropFrame)
+			{
+				particlePoint++;
+				//trace("release",i,particlePoint % libAmount);
+				motion[rear].p = particleLib[particlePoint % libAmount];
+				motion[rear].p.x = motion[rear].targetX;
+				motion[rear].p.y = -30;
+				motion[rear].p.visible = true;
+				switch (motion[rear].type)
+				{
+					case "bomb" :
+						motion[rear].p.gotoAndStop(3);
+						break;
+					case "gold":
+						motion[rear].p.gotoAndStop(2);
+						break;
+				}
+				rear++;
+				if (rear >= libAmount) head++;
+			}
 			//遍历motion数组的每一个元素
-			for (var i:int = 0; i < motion.length; i++)
+			for (var i:int = head; i < rear; i++)
 			{
 				/*
-				 * 如果运行帧数大于元件的出发帧数
-				 * 而且motion的p非空
+				 * 如果motion的p非空
 				 *
 				 * motion[i]的p用于引用particleLib
 				 * 中的元件实例，当motion[i]不用的时候
 				 * motion[i].p为null
 				*/
-				if (runFrame > motion[i].dropFrame && motion[i].p !== null)
+				if (motion[i].p !== null)
 				{
 					/**
 					 * 如果元件与hitZone碰撞，则
@@ -284,28 +322,6 @@
 						motion[i].p.y +=  motion[i].vy;
 					}
 				}
-				/*
-				 * 如果运行帧数恰好等于元件的出发帧数
-				 * 则从particleLib中
-				 * 分配一个实例给motion[i].p
-				*/
-				else if (runFrame == motion[i].dropFrame)
-				{
-					particlePoint++;
-					motion[i].p = particleLib[particlePoint % libAmount];
-					motion[i].p.x = motion[i].targetX;
-					motion[i].p.y = -30;
-					motion[i].p.visible = true;
-					switch (motion[i].type)
-					{
-						case "bomb" :
-							motion[i].p.gotoAndStop(3);
-							break;
-						case "gold" :
-							motion[i].p.gotoAndStop(2);
-							break;
-					}
-				}
 			}
 		}
 		//清空游戏数据
@@ -318,6 +334,8 @@
 			caught = 0;
 			runFrame = 0;
 			particlePoint = 0;
+			rear = 0;
+			head = 0;
 			for (var i = 0; i < libAmount; i++)
 			{
 				particleLib[i].visible = false;

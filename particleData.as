@@ -6,6 +6,7 @@
 	{
 		public var targetX:int = 0;
 		public var dropFrame:int = 0;
+		public var reachFrame:int = 0;
 		public var vy:int = 0;
 		public var type:String = "n";
 		public var p:MovieClip;

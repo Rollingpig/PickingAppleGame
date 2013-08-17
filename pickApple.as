@@ -36,7 +36,7 @@
 		public var aboutUI:about_ui = new about_ui();
 		private var uis:Array = new Array(menuUI,levelUI,rankUI,aboutUI);
 		private var bgLoader:Loader = new Loader();
-
+		
 		public function pickApple()
 		{
 			stop();
@@ -102,7 +102,7 @@
 					rankUI.visible = true;
 					rankUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,exitRank);
 					rankUI.rank_txt.text = gamedata.getFullRank(currentLevel);
-					rankUI.title_txt.text = "Lawn - " + String(currentLevel);
+					rankUI.title_txt.text = gamedata.leveldata.level[currentLevel-1].title;
 					break;
 				case "aboutUI" :
 					aboutUI.visible = true;
@@ -159,10 +159,10 @@
 			gotoAndStop(2);
 			showUI("levelUI");
 		}
-		public function selectLevel(Event:TouchEvent)
+		public function selectLevel(Event:TouchEvent = null)
 		{
-			showUI("levelUI");
 			gotoAndStop(2);
+			showUI("levelUI");
 		}
 		public function showRank(event:TouchEvent)
 		{
@@ -172,8 +172,7 @@
 		}
 		public function exitRank(event:TouchEvent)
 		{
-			showUI("levelUI");
-			gotoAndStop(2);
+			selectLevel();
 		}
 		public function exitProgram(Event:TouchEvent)
 		{
@@ -269,30 +268,6 @@
 				levelSettingHandler();
 				savetime++;
 			}
-			else if (savetime < 3)
-			{
-				savetime++;
-			}
-			else if (savetime >= 3 && savetime < 10)
-			{
-				scoreUI.name_txt.text = "再按的是查大爷";
-				savetime++;
-			}
-			else if (savetime >= 10 && savetime < 50)
-			{
-				scoreUI.name_txt.text = "你是查大爷";
-				savetime++;
-			}
-			else if (savetime >= 50 && savetime < 100)
-			{
-				scoreUI.name_txt.text = "原来是刚烈";
-				savetime++;
-			}
-			else
-			{
-				scoreUI.name_txt.text = "小雨？";
-				savetime++;
-			}
 		}
 		/*
 		basic function for game
@@ -310,6 +285,7 @@
 		public function set_bomb(tx:Number)
 		{
 			this.addChild(pbomb);
+			chicken.gotoAndPlay(2);
 			pbomb.x = tx;
 			pbomb.y = 500;
 			pbomb.gotoAndPlay(1);
