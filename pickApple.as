@@ -9,9 +9,9 @@
 	import flash.ui.MultitouchInputMode;
 	import flash.events.Event;
 	import flash.desktop.NativeApplication;
-	import flash.net.URLRequest;
-	import flash.display.Loader;
-	import flash.events.IOErrorEvent;
+	import bgDisplay;
+	import flash.display.Sprite;
+	import flash.display.Shape;
 
 	public class pickApple extends MovieClip
 	{
@@ -29,35 +29,70 @@
 		public var currentLevel:int = 1;
 
 		public var levelIcons:Array = new Array  ;
+		public var icons:Sprite = new Sprite();
+		private var iconmask:Shape = new Shape();
 
 		public var levelUI:level_ui = new level_ui();
 		public var menuUI:menu_ui = new menu_ui();
 		public var rankUI:rank_ui = new rank_ui();
 		public var aboutUI:about_ui = new about_ui();
 		private var uis:Array = new Array(menuUI,levelUI,rankUI,aboutUI);
-		private var bgLoader:Loader = new Loader();
+		private var bg:bgDisplay;
+		private var postinfo:String = "";
 		
+		private var endSec:int = 4;
+		private var pageSig:int = 0;
+
 		public function pickApple()
 		{
 			stop();
 			addChild(parsys);
 			parsys.initParticle(papple);
 			levelSettingHandler();
-			showUI("menuUI");
 			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
+			iconmask.graphics.beginFill(0x000000,1);
+			iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
+			iconmask.graphics.endFill();
+			icons.mask = iconmask;
+			bg = new bgDisplay(this,bgLayer);
+			postinfo = "menu";
+			bg.loadMenu();
 		}
 		/*
 		layout
 		*/
-		function levelSettingHandler():void
+		public function postLoad():void
+		{
+			switch (postinfo)
+			{
+				case "menu":
+					gotoAndStop(1);
+					showUI("menuUI");
+					break;
+				case "start game":
+					gameLayout();
+					break;
+				case "select":
+					gotoAndStop(1);
+					showUI("levelUI");
+					break;
+				case "about":
+					showUI("aboutUI");
+					break;
+				case "rank":
+					showUI("rankUI");
+					break;
+			}
+		}
+		public function levelSettingHandler():void
 		{
 			var total:int = 0;
-			var cy:int = 130;
+			var cy:int = 125;
 			for (var i:int = 0; i<levelIcons.length; i++)
 			{
-				if (levelUI.contains(levelIcons[i]))
+				if (icons.contains(levelIcons[i]))
 				{
-					levelUI.removeChild(levelIcons[i]);
+					icons.removeChild(levelIcons[i]);
 				}
 			}
 			levelIcons.length = 0;
@@ -72,9 +107,17 @@
 				p.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
 				p.x = (480 - 400) / 2;
 				p.y = cy;
-				cy +=  90;
+				cy +=  85;
 				levelIcons.push(p);
 			}
+		}
+		public function iconsUp(event:TouchEvent):void
+		{
+			if (icons.y < 0) icons.y += 85;
+		}
+		public function iconsDown(event:TouchEvent):void
+		{
+			if (icons.y + icons.height > 570) icons.y -= 85;
 		}
 		private function showUI(tname:String):void
 		{
@@ -87,16 +130,19 @@
 			{
 				case "levelUI" :
 					levelUI.visible = true;
+					levelUI.addChild(iconmask);
+					levelUI.addChild(icons);
 					levelUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					levelUI.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
+					levelUI.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
 					for (var j:int = 0; j<levelIcons.length; j++)
 					{
-						if (! levelUI.contains(levelIcons[j]))
+						if (! icons.contains(levelIcons[j]))
 						{
-							levelUI.addChild(levelIcons[j]);
+							icons.addChild(levelIcons[j]);
 						}
 						levelIcons[j].high_txt.text = gamedata.getHighest(j+1);
 					}
-
 					break;
 				case "rankUI" :
 					rankUI.visible = true;
@@ -129,50 +175,37 @@
 			add_game_motion();
 			addChickenListener();
 		}
-		private function bgCompleteHandler(event:Event):void
-		{
-			gameLayout();
-			gamebg.addChild(bgLoader);
-		}
-		private function bgFailHandler(event:Event):void
-		{
-			gameLayout();
-		}
 		/*
 		functions for buttons
 		*/
 		public function returnHome(Event:TouchEvent)
 		{
-			showUI("menuUI");
-			gotoAndStop(1);
+			postinfo = "menu";
+			bg.loadMenu();
 		}
 		public function goAbout(Event:TouchEvent)
 		{
-			showUI("aboutUI");
-			gotoAndStop(2);
+			postinfo = "about";
+			bg.loadSelect();
 		}
 		public function returnLevel(Event:TouchEvent)
 		{
-			parsys.resetStats();
-			parsys.clearMotion();
 			gamedata.addRankResult(scoreUI.name_txt.text,score,currentLevel);
-			gotoAndStop(2);
-			showUI("levelUI");
+			selectLevel();
 		}
-		public function selectLevel(Event:TouchEvent = null)
+		public function selectLevel(event:TouchEvent = null)
 		{
-			gotoAndStop(2);
-			showUI("levelUI");
+			postinfo = "select";
+			bg.loadSelect();
 		}
 		public function showRank(event:TouchEvent)
 		{
 			currentLevel = levelIcons.indexOf(event.target.parent) + 1;
 			showUI("rankUI");
-			gotoAndStop(2);
 		}
 		public function exitRank(event:TouchEvent)
 		{
-			selectLevel();
+			showUI("levelUI");
 		}
 		public function exitProgram(Event:TouchEvent)
 		{
@@ -184,9 +217,7 @@
 			removeChild(parsys);
 			removeChild(gameUI);
 			stop_game_motion();
-			parsys.resetStats();
-			gotoAndStop(2);
-			showUI("levelUI");
+			selectLevel();
 		}
 		public function resumeGame(Event:TouchEvent)
 		{
@@ -200,28 +231,10 @@
 			removeChickenListener();
 			gameUI.gotoAndStop(2);
 		}
-		public function backdoor(Event:TouchEvent)
-		{
-			var s:String = aboutUI.back_txt.text;
-			var command:Array = s.split("#");
-			switch (command[0])
-			{
-				case "clr" :
-					gamedata.clearLevelResult(int(command[1]));
-					break;
-				case "del" :
-					if (gamedata.deleteLevel(int(command[1])))
-					{
-						levelSettingHandler();
-					}
-					break;
-				case "tl" :
-					trace(gamedata.leveldata);
-					break;
-			}
-		}
 		public function startLevel(event:TouchEvent)
 		{
+			parsys.resetStats();
+			parsys.clearMotion();
 			c_chickSpeed = 0;
 			score = 0;
 			savetime = 0;
@@ -239,10 +252,8 @@
 			chickSpeed = lev.chickspeed;
 			remainTime = lev.time;
 			leveldat = lev;
-			bgLoader.unload();
-			bgLoader.load(new URLRequest(lev.background));
-			bgLoader.contentLoaderInfo.addEventListener(Event.COMPLETE,bgCompleteHandler);
-			bgLoader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,bgFailHandler);
+			postinfo = "start game";
+			bg.loadLevel(lev.background);
 		}
 		public function replayLevel(event:TouchEvent)
 		{
@@ -267,6 +278,71 @@
 				gamedata.addLevel("Custom",path,leveldat);
 				levelSettingHandler();
 				savetime++;
+				selectLevel();
+				parsys.exitEdit();
+			}
+		}
+		public function backdoor(Event:TouchEvent)
+		{
+			var s:String = aboutUI.back_txt.text;
+			var command:Array = s.split("#");
+			switch (command[0])
+			{
+				case "clr" :
+					gamedata.clearLevelResult(int(command[1]));
+					break;
+				case "del" :
+					if (gamedata.deleteLevel(int(command[1])))
+					{
+						levelSettingHandler();
+					}
+					break;
+				case "tl" :
+					trace(gamedata.leveldata);
+					break;
+			}
+		}
+		public function editLevel(Event:TouchEvent):void
+		{
+			gotoAndStop(5);
+			parsys.enterEdit();
+			pageSig = -1;
+			addChild(parsys);
+			f_btn.addEventListener(TouchEvent.TOUCH_TAP,pageUp);
+			b_btn.addEventListener(TouchEvent.TOUCH_TAP,pageDown);
+			save_btn.addEventListener(TouchEvent.TOUCH_TAP,saveLevel);
+			back_btn.addEventListener(TouchEvent.TOUCH_TAP,exitEdit);
+			typen.addEventListener(TouchEvent.TOUCH_TAP,typeItem);
+			typegold.addEventListener(TouchEvent.TOUCH_TAP,typeItem);
+			typebomb.addEventListener(TouchEvent.TOUCH_TAP,typeItem);
+		}
+		public function exitEdit(Event:TouchEvent):void
+		{
+			selectLevel();
+			parsys.exitEdit();
+		}
+		public function typeItem(event:TouchEvent):void
+		{
+			parsys.editType = event.target.name.split("type")[1];
+		}
+		public function pageUp(Event:TouchEvent):void
+		{
+			//trace(pageSig);
+			if(pageSig !== 1)
+			{
+				pageSig = parsys.switchPage(1);
+				timerange.text = stomin(endSec) + "-" + stomin(endSec+4);
+				endSec += 4;
+			}
+		}
+		public function pageDown(Event:TouchEvent):void
+		{
+			//trace(pageSig);
+			if(pageSig !== -1)
+			{
+				pageSig = parsys.switchPage(-1);
+				endSec -= 4;
+				timerange.text = stomin(endSec-4) + "-" + stomin(endSec);
 			}
 		}
 		/*

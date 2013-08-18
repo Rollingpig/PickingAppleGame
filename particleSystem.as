@@ -9,6 +9,7 @@
 	import flash.filesystem.FileStream;
 	import flash.filesystem.FileMode;
 	import particleData;
+	import flash.events.TouchEvent;
 
 	/**
 	 * "particleSystem"用于显示元件运动
@@ -38,10 +39,9 @@
 		 * 
 		 * libAmount指particleLib的元件总数
 		*/
-		private var particleLib:Array = new Array  ;
+		private var particleLib:Vector.<MovieClip> = new Vector.<MovieClip>  ;
 		private const libAmount:int = 25;
 		private var particlePoint:int = 0;
-		private var special:MovieClip;
 		private var rear:int = 0;
 		private var head:int = 0;
 		
@@ -51,7 +51,7 @@
 		//the size of displaying area
 		private const layerWidth:int = 480 - 40;
 		private const layerHeight:int = 700;
-		private const chickHeight:int = 570;
+		private const chickHeight:int = 488+75;
 
 		public var hitZone:MovieClip;
 		//物品元件的基本下落速度
@@ -64,13 +64,28 @@
 		public var miss:int = 0;
 		public var combo:int = 0;
 		public var maxcombo:int = 0;
-
+		
 		private var file:File = File.documentsDirectory;
 		private var fileStream:FileStream = new FileStream();
+		
+		private var libUse:Vector.<int> = new Vector.<int>;
+		private var endFrame:int = 0;
+		private var frameSpan:int = 4 * 24;
+		private var viewhead:int = 0;
+		private var viewrear:int = 0;
+		private var maskHeight:int = 660 - 40;
+		private var background:Sprite = new Sprite();
+		public var editType:String = "n";
+		private var forbid:Boolean = false;
 
 		public function particleSystem()
 		{
 			this.mouseEnabled = false;
+			background.graphics.beginFill(0x336699,1);
+			background.graphics.drawRect(0,0,480,660);
+			background.graphics.endFill();
+			background.visible = false;
+			this.addChild(background);
 		}
 		/**
 		 * "initParticle" 初始化函数
@@ -89,6 +104,7 @@
 				particleLib.push(particle);
 				particle.visible = false;
 				this.addChild(particle);
+				libUse.push(-1);
 			}
 		}
 		/**
@@ -108,7 +124,7 @@
 			var deltaFrame:Number = 0;
 			var beginFrame:int = int(chickHeight / basicSpeed);
 			var deltaX:int = 0;
-			var ut:Number = (totalFrame - beginFrame) / normal;
+			var ut:Number = (totalFrame - beginFrame)/ normal;
 			deltaFrame = beginFrame;
 			//使苹果随时间均匀分布
 			for (var i:int = 0; i < normal; i++)
@@ -127,7 +143,7 @@
 				else
 				{
 					//随机生成第i+1个苹果与第i个苹果的位置偏移量
-					deltaX = Math.random() * (1 - threshold) + threshold * imaSpeed * deltaFrame;
+					deltaX = (Math.random() * (1 - threshold) + threshold) * imaSpeed * deltaFrame;
 					/** 
 					 * 如果第i+1个苹果的位置超出显示区，则重新安排位置。
 					 * 如果未超出，则随机确定偏移量的正负。
@@ -172,7 +188,7 @@
 			for (i = 0; i < golden; i++)
 			{
 				temp = new particleData  ;
-				temp.vy = Math.random() * 8 + basicSpeed + 5;
+				temp.vy = Math.random() * 12 + basicSpeed
 				temp.reachFrame = Math.random() * (totalFrame - beginFrame) + beginFrame;
 				temp.dropFrame = temp.reachFrame - int(chickHeight / temp.vy);
 				temp.targetX = Math.random() * layerWidth;
@@ -185,13 +201,13 @@
 		 * "loadLocal"函数将从文档位置（SD卡）
 		 * 读取物品元件下落的序列"motion"。
 		*/
-		public function loadLocal(path:String="level.dat"):void
+		public function loadLocal(path:String = "level.dat"):void
 		{
 			file = File.documentsDirectory.resolvePath(path);
 			//path has included "pickapple/" prefix;
 			try
 			{
-				fileStream.open(file,FileMode.READ);
+				fileStream.open(file, FileMode.READ);
 				motion = fileStream.readObject();
 				fileStream.close();
 			}
@@ -206,12 +222,169 @@
 		*/
 		public function saveLevel(label:int):String
 		{
-			var path:String = "pickapple/custom" + String(label + 1) + ".dat";
+			motion.sortOn("dropFrame",Array.NUMERIC);
+			var path:String = "pickapple/custom" + String(label+1) + ".dat";
 			file = File.documentsDirectory.resolvePath(path);
-			fileStream.open(file,FileMode.WRITE);
+			fileStream.open(file, FileMode.WRITE);
 			fileStream.writeObject(motion);
 			fileStream.close();
 			return path;
+		}
+		//"addParticle"函数将一个新的元件加入到motion数组中
+		public function addParticle(type:String,x,dropFrame,reachFrame:int,vy:int):int
+		{
+			var i:int = 0;
+			var p:particleData = new particleData();
+			p.dropFrame = dropFrame;
+			p.reachFrame = reachFrame;
+			p.type = type;
+			p.targetX = x;
+			p.vy = vy;
+			viewrear++;
+			for(i = 0;i < motion.length;i++)
+			{
+				if(motion[i].reachFrame > reachFrame)
+				{
+					motion.splice(i,0,p);
+					break;
+				}
+			}
+			if (i == motion.length) motion.push(p);
+			return i;
+		}
+		//"deleteParticle"函数将一个元件从motion数组中删除
+		public function deleteParticle(index:int):void
+		{
+			motion.splice(index,1);
+			viewrear--;
+		}
+		public function showParticle(index:int):void
+		{
+			var i:int = 0;
+			for(i = 0;i < libUse.length;i++)
+			{
+				if(libUse[i] == -1)
+				{
+					libUse[i] = index;
+					break;
+				}
+			}
+			motion[index].p = particleLib[i];
+			switch (motion[index].type)
+			{
+				case "bomb" :
+					motion[index].p.gotoAndStop(3);
+					break;
+				case "gold":
+					motion[index].p.gotoAndStop(2);
+					break;
+			}
+			motion[index].p.visible = true;
+			motion[index].p.x = motion[index].targetX;
+			motion[index].p.y = (endFrame - motion[index].reachFrame)/frameSpan * maskHeight;
+			motion[index].p.addEventListener(TouchEvent.TOUCH_TAP,touchDel);
+			//trace("show: index",index," p",motion[index].p," lib_index",i," reachFrame",motion[index].reachFrame," y",motion[index].p.y);
+			forbid = viewrear - viewhead + 1 >= libAmount;
+			//trace(forbid);
+		}
+		public function hideParticle(index:int):void
+		{
+			var j:int = particleLib.indexOf(motion[index].p,0);
+			//trace("hide: index",index," p",motion[index].p," lib_index",j);
+			motion[index].p.visible = false;
+			motion[index].p.gotoAndStop(1);
+			//trace("find at ",j);
+			motion[index].p = null;
+			libUse[j] = -1;
+			forbid = false;
+		}
+		public function touchAdd(event:TouchEvent):void
+		{
+			if (! forbid)
+			{
+				var touchX:int = event.localX - 25;
+				var touchY:int = event.localY - 25;
+				var vy:int = Math.random() * 12 + basicSpeed;
+				var reachFrame:int = endFrame - touchY / maskHeight * frameSpan;
+				trace(editType," x",touchX," reachFrame",reachFrame);
+				showParticle(addParticle(editType,touchX,reachFrame - int(chickHeight/vy),reachFrame,vy));
+			}
+		}
+		public function touchDel(event:TouchEvent):void
+		{
+			for(var i:int = viewhead;i <= viewrear;i++)
+			{
+				if(event.target == motion[i].p) break;
+			}
+			hideParticle(i);
+			deleteParticle(i);
+		}
+		public function enterEdit():void
+		{
+			motion.sortOn("reachFrame",Array.NUMERIC);
+			for (var i:int = 0; i < libAmount; i++)
+			{
+				particleLib[i].visible = false;
+				particleLib[i].gotoAndStop(1);
+			}
+			endFrame = frameSpan;
+			viewhead = 0;
+			viewrear = -1;
+			for(i = viewhead;i < motion.length && motion[i].reachFrame <= endFrame;i++)
+			{
+				viewrear ++;
+				showParticle(i);
+			}
+			background.visible = true;
+			background.addEventListener(TouchEvent.TOUCH_TAP,touchAdd);
+			//trace(viewrear,endFrame);
+		}
+		public function exitEdit():void
+		{
+			for (var i:int = 0; i < libAmount; i++)
+			{
+				particleLib[i].visible = false;
+				particleLib[i].gotoAndStop(1);
+			}
+			background.visible = false;
+			background.removeEventListener(TouchEvent.TOUCH_TAP,touchAdd);
+		}
+		public function switchPage(dir:int):int
+		{
+			var i:int = 0;
+			var signal:int = 0;
+			if(dir>0)
+			{
+				//trace(endFrame,endFrame-frameSpan);
+				endFrame += frameSpan;
+				for(i = viewhead;i <= viewrear;i++)
+				{
+					hideParticle(i);
+				}
+				viewhead = viewrear >= 0 ? viewrear + 1:0;
+				for(i = viewhead;i < motion.length && motion[i].reachFrame < endFrame;i++)
+				{
+					viewrear ++;
+					showParticle(i);
+				}
+				signal = i >= motion.length-1 ? 1:0;
+			}
+			else
+			{
+				endFrame -= frameSpan;
+				for(i = viewhead;i <= viewrear;i++)
+				{
+					hideParticle(i);
+				}
+				viewrear = viewhead - 1;
+				for(i = viewrear;i >= 0 && motion[i].reachFrame > endFrame-frameSpan;i--)
+				{
+					viewhead --;
+					showParticle(i);
+				}
+				signal = i <= 0 ? -1:0;
+			}
+			return signal;
 		}
 		/**
 		 * "particle_motion"在进入帧时被触发，
@@ -235,7 +408,7 @@
 			 * 分配一个实例给motion[rear].p
 			 * 并把尾指针rear加1
 			*/
-			if (rear < motion.length && runFrame >= motion[rear].dropFrame)
+			while (rear < motion.length && runFrame >= motion[rear].dropFrame)
 			{
 				particlePoint++;
 				//trace("release",i,particlePoint % libAmount);
@@ -255,7 +428,7 @@
 				rear++;
 				if (rear >= libAmount) head++;
 			}
-			//遍历motion数组的每一个元素
+			//遍历motion数组显示队列的每一个元素
 			for (var i:int = head; i < rear; i++)
 			{
 				/*
