@@ -18,8 +18,8 @@
 		private var select:Bitmap;
 		private var level:Bitmap;
 		
-		public var menuURL:URLRequest = new URLRequest("menu.png");
-		public var selectURL:URLRequest = new URLRequest("level.png");
+		public var menuURL:URLRequest = new URLRequest("native/menu.png");
+		public var selectURL:URLRequest = new URLRequest("native/level.png");
 		public var levelURL:URLRequest;
 		
 		public function bgDisplay(mainscr,target:MovieClip):void

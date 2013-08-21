@@ -31,6 +31,7 @@
 		public var levelIcons:Array = new Array  ;
 		public var icons:Sprite = new Sprite();
 		private var iconmask:Shape = new Shape();
+		private var leveltotal:int = 0;
 
 		public var levelUI:level_ui = new level_ui();
 		public var menuUI:menu_ui = new menu_ui();
@@ -40,7 +41,7 @@
 		private var bg:bgDisplay;
 		private var postinfo:String = "";
 		
-		private var endSec:int = 4;
+		private var endSec:int = 2;
 		private var pageSig:int = 0;
 
 		public function pickApple()
@@ -86,7 +87,7 @@
 		}
 		public function levelSettingHandler():void
 		{
-			var total:int = 0;
+			leveltotal = 0;
 			var cy:int = 125;
 			for (var i:int = 0; i<levelIcons.length; i++)
 			{
@@ -98,10 +99,10 @@
 			levelIcons.length = 0;
 			for each (var prop:XML in gamedata.leveldata.level)
 			{
-				total++;
+				leveltotal++;
 				var p:levelIcon = new levelIcon();
-				p.high_txt.text = gamedata.getHighest(total);
-				p.label_txt.text = String(total);
+				p.high_txt.text = gamedata.getHighest(leveltotal);
+				p.label_txt.text = String(leveltotal);
 				p.title_txt.text = prop.title;
 				p.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,showRank);
 				p.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
@@ -274,8 +275,8 @@
 		{
 			if (savetime == 0)
 			{
-				var path:String = parsys.saveLevel(gamedata.leveldata. @ total);
-				gamedata.addLevel("Custom",path,leveldat);
+				var path:String = parsys.saveLevel(leveltotal + 1);
+				gamedata.addLevel(name_txt.text,path,leveldat,leveltotal + 1);
 				levelSettingHandler();
 				savetime++;
 				selectLevel();
@@ -308,6 +309,8 @@
 			parsys.enterEdit();
 			pageSig = -1;
 			addChild(parsys);
+			endSec = 2;
+			timerange.text = stomin(endSec-2) + "-" + stomin(endSec);
 			f_btn.addEventListener(TouchEvent.TOUCH_TAP,pageUp);
 			b_btn.addEventListener(TouchEvent.TOUCH_TAP,pageDown);
 			save_btn.addEventListener(TouchEvent.TOUCH_TAP,saveLevel);
@@ -315,6 +318,7 @@
 			typen.addEventListener(TouchEvent.TOUCH_TAP,typeItem);
 			typegold.addEventListener(TouchEvent.TOUCH_TAP,typeItem);
 			typebomb.addEventListener(TouchEvent.TOUCH_TAP,typeItem);
+			lock.addEventListener(TouchEvent.TOUCH_TAP,toggleLock);
 		}
 		public function exitEdit(Event:TouchEvent):void
 		{
@@ -325,14 +329,26 @@
 		{
 			parsys.editType = event.target.name.split("type")[1];
 		}
+		public function toggleLock(event:TouchEvent):void
+		{
+			parsys.lock = ! parsys.lock;
+			if (parsys.lock)
+			{
+				lock.gotoAndStop(2);
+			}
+			else
+			{
+				lock.gotoAndStop(1);
+			}
+		}
 		public function pageUp(Event:TouchEvent):void
 		{
 			//trace(pageSig);
 			if(pageSig !== 1)
 			{
 				pageSig = parsys.switchPage(1);
-				timerange.text = stomin(endSec) + "-" + stomin(endSec+4);
-				endSec += 4;
+				timerange.text = stomin(endSec) + "-" + stomin(endSec+2);
+				endSec += 2;
 			}
 		}
 		public function pageDown(Event:TouchEvent):void
@@ -341,8 +357,8 @@
 			if(pageSig !== -1)
 			{
 				pageSig = parsys.switchPage(-1);
-				endSec -= 4;
-				timerange.text = stomin(endSec-4) + "-" + stomin(endSec);
+				endSec -= 2;
+				timerange.text = stomin(endSec-2) + "-" + stomin(endSec);
 			}
 		}
 		/*

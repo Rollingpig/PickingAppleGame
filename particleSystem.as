@@ -70,19 +70,21 @@
 		
 		private var libUse:Vector.<int> = new Vector.<int>;
 		private var endFrame:int = 0;
-		private var frameSpan:int = 4 * 24;
+		private var frameSpan:int = 2 * 24;
 		private var viewhead:int = 0;
 		private var viewrear:int = 0;
-		private var maskHeight:int = 660 - 40;
 		private var background:Sprite = new Sprite();
 		public var editType:String = "n";
+		public var lock:Boolean = false;
 		private var forbid:Boolean = false;
+		private const delY:int = 80;
+		private const maskHeight:int = 540;
 
 		public function particleSystem()
 		{
 			this.mouseEnabled = false;
-			background.graphics.beginFill(0x336699,1);
-			background.graphics.drawRect(0,0,480,660);
+			background.graphics.beginFill(0x336699,0);
+			background.graphics.drawRect(0,delY,480,maskHeight + 40);
 			background.graphics.endFill();
 			background.visible = false;
 			this.addChild(background);
@@ -203,8 +205,15 @@
 		*/
 		public function loadLocal(path:String = "level.dat"):void
 		{
-			file = File.documentsDirectory.resolvePath(path);
-			//path has included "pickapple/" prefix;
+			if (path.indexOf("native/") == 0)
+			{
+				file = File.applicationDirectory.resolvePath(path);
+			}
+			else
+			{
+				file = File.documentsDirectory.resolvePath(path);
+				//path has included "pickapple/" prefix;
+			}
 			try
 			{
 				fileStream.open(file, FileMode.READ);
@@ -213,6 +222,7 @@
 			}
 			catch (error:IOError)
 			{
+				trace("io error");
 			}
 		}
 		/**
@@ -223,7 +233,7 @@
 		public function saveLevel(label:int):String
 		{
 			motion.sortOn("dropFrame",Array.NUMERIC);
-			var path:String = "pickapple/custom" + String(label+1) + ".dat";
+			var path:String = "pickapple/custom" + String(label) + ".dat";
 			file = File.documentsDirectory.resolvePath(path);
 			fileStream.open(file, FileMode.WRITE);
 			fileStream.writeObject(motion);
@@ -281,7 +291,7 @@
 			}
 			motion[index].p.visible = true;
 			motion[index].p.x = motion[index].targetX;
-			motion[index].p.y = (endFrame - motion[index].reachFrame)/frameSpan * maskHeight;
+			motion[index].p.y = (endFrame - motion[index].reachFrame)/frameSpan * maskHeight + delY;
 			motion[index].p.addEventListener(TouchEvent.TOUCH_TAP,touchDel);
 			//trace("show: index",index," p",motion[index].p," lib_index",i," reachFrame",motion[index].reachFrame," y",motion[index].p.y);
 			forbid = viewrear - viewhead + 1 >= libAmount;
@@ -304,8 +314,9 @@
 			{
 				var touchX:int = event.localX - 25;
 				var touchY:int = event.localY - 25;
-				var vy:int = Math.random() * 12 + basicSpeed;
-				var reachFrame:int = endFrame - touchY / maskHeight * frameSpan;
+				var vy:int = basicSpeed;
+				vy = lock ? vy + 6 : vy + Math.random() * 12;
+				var reachFrame:int = endFrame - (touchY -delY) / maskHeight * frameSpan;
 				trace(editType," x",touchX," reachFrame",reachFrame);
 				showParticle(addParticle(editType,touchX,reachFrame - int(chickHeight/vy),reachFrame,vy));
 			}

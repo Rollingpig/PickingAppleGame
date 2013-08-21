@@ -91,16 +91,16 @@
 		{
 			ranklist[level].length = 0;
 		}
-		public function addLevel(newtitle:String,newpath:String,leveldat:XML):void
+		public function addLevel(newtitle:String,newpath:String,leveldat:XML,newlabel:int):void
 		{
 			var newlevel:XML = leveldat.copy();
-			leveldata.@total = int(leveldata.@total) + 1;
 			newlevel.path = newpath;
 			newlevel.random = false;
 			newlevel.title = newtitle;
-			newlevel.@label = leveldata.@total;
+			newlevel.@label = newlabel;
 			leveldata.appendChild(newlevel);
-			trace(leveldata);
+			trace("level added");
+			//trace(leveldata);
 			ranklist.push(new Array);
 		}
 		public function deleteLevel(tlabel:int):Boolean
@@ -116,7 +116,6 @@
 				}
 			}
 			ranklist.splice(tlabel,1);
-			leveldata.@total = int(leveldata.@total) - 1;
 			try
 			{
 				file.deleteFile();
@@ -125,7 +124,7 @@
 			{
 				//none
 			}
-			trace("done")
+			trace(leveldata);
 			return true;
 		}
 	}
