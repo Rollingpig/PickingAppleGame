@@ -9,7 +9,7 @@
 	import flash.filesystem.FileStream;
 	import flash.filesystem.FileMode;
 	import particleData;
-	import flash.events.MouseEvent;
+	import flash.events.TouchEvent;
 
 	/**
 	 * "particleSystem"用于显示元件运动
@@ -57,6 +57,13 @@
 		//物品元件的基本下落速度
 		//the basic speed of the falling object.
 		public var basicSpeed:int = 7;
+
+		//游戏数据 Stats of the game
+		public var caught:int = 0;
+		public var bomb:int = 0;
+		public var miss:int = 0;
+		public var combo:int = 0;
+		public var maxcombo:int = 0;
 		
 		private var file:File = File.documentsDirectory;
 		private var fileStream:FileStream = new FileStream();
@@ -72,9 +79,8 @@
 		private var forbid:Boolean = false;
 		private const delY:int = 80;
 		private const maskHeight:int = 540;
-		private var main:MovieClip;
-		
-		public function particleSystem(mainscr:MovieClip):void
+
+		public function particleSystem()
 		{
 			this.mouseEnabled = false;
 			background.graphics.beginFill(0x336699,0);
@@ -82,7 +88,6 @@
 			background.graphics.endFill();
 			background.visible = false;
 			this.addChild(background);
-			main = mainscr;
 		}
 		/**
 		 * "initParticle" 初始化函数
@@ -105,19 +110,6 @@
 			}
 		}
 		/**
-		 * "loadLocal"函数将从文档位置（SD卡）
-		 * 读取物品元件下落的序列"motion"。
-		*/
-		public function loadLocal(lev:Object):void
-		{
-			if(! lev.gen)
-			{
-				motion = lev.sequence;
-			}else{
-				//generate(lev.genstats);
-			}
-		}
-		/**
 		 * "generate"函数根据以下参数，生成物品元件下落的序列"motion"
 		 * 在游戏进行中，会读取这一序列，显示元件下落的动画
 		 * 
@@ -128,7 +120,7 @@
 		 * threshold 每个苹果之间的距离与小鸡能达到的最大距离之比
 		 * imaSpeed 小鸡的速度
 		*/
-		private function generate(normal:int,totalTime:int,bombs:int,golden:int,threshold:Number,imaSpeed:int)
+		public function generate(normal:int,totalTime:int,bombs:int,golden:int,threshold:Number,imaSpeed:int)
 		{
 			var totalFrame:int = totalTime * 24;
 			var deltaFrame:Number = 0;
@@ -208,14 +200,45 @@
 			motion.sortOn("dropFrame",Array.NUMERIC);
 		}
 		/**
+		 * "loadLocal"函数将从文档位置（SD卡）
+		 * 读取物品元件下落的序列"motion"。
+		*/
+		public function loadLocal(path:String = "level.dat"):void
+		{
+			if (path.indexOf("native/") == 0)
+			{
+				file = File.applicationDirectory.resolvePath(path);
+			}
+			else
+			{
+				file = File.documentsDirectory.resolvePath(path);
+				//path has included "pickapple/" prefix;
+			}
+			try
+			{
+				fileStream.open(file, FileMode.READ);
+				motion = fileStream.readObject();
+				fileStream.close();
+			}
+			catch (error:IOError)
+			{
+				trace("io error");
+			}
+		}
+		/**
 		 * "saveLevel"函数将在文档位置（SD卡）
 		 * 存储物品元件下落的序列"motion"，
 		 * 并返回新生成的文件名。
 		*/
-		public function saveLevel():Array
+		public function saveLevel(label:int):String
 		{
 			motion.sortOn("dropFrame",Array.NUMERIC);
-			return motion;
+			var path:String = "pickapple/custom" + String(label) + ".dat";
+			file = File.documentsDirectory.resolvePath(path);
+			fileStream.open(file, FileMode.WRITE);
+			fileStream.writeObject(motion);
+			fileStream.close();
+			return path;
 		}
 		//"addParticle"函数将一个新的元件加入到motion数组中
 		public function addParticle(type:String,x,dropFrame,reachFrame:int,vy:int):int
@@ -269,7 +292,7 @@
 			motion[index].p.visible = true;
 			motion[index].p.x = motion[index].targetX;
 			motion[index].p.y = (endFrame - motion[index].reachFrame)/frameSpan * maskHeight + delY;
-			motion[index].p.addEventListener(MouseEvent.CLICK,touchDel);
+			motion[index].p.addEventListener(TouchEvent.TOUCH_TAP,touchDel);
 			//trace("show: index",index," p",motion[index].p," lib_index",i," reachFrame",motion[index].reachFrame," y",motion[index].p.y);
 			forbid = viewrear - viewhead + 1 >= libAmount;
 			//trace(forbid);
@@ -285,7 +308,7 @@
 			libUse[j] = -1;
 			forbid = false;
 		}
-		public function touchAdd(event:MouseEvent):void
+		public function touchAdd(event:TouchEvent):void
 		{
 			if (! forbid)
 			{
@@ -298,7 +321,7 @@
 				showParticle(addParticle(editType,touchX,reachFrame - int(chickHeight/vy),reachFrame,vy));
 			}
 		}
-		public function touchDel(event:MouseEvent):void
+		public function touchDel(event:TouchEvent):void
 		{
 			for(var i:int = viewhead;i <= viewrear;i++)
 			{
@@ -324,7 +347,7 @@
 				showParticle(i);
 			}
 			background.visible = true;
-			background.addEventListener(MouseEvent.CLICK,touchAdd);
+			background.addEventListener(TouchEvent.TOUCH_TAP,touchAdd);
 			//trace(viewrear,endFrame);
 		}
 		public function exitEdit():void
@@ -334,16 +357,13 @@
 				particleLib[i].visible = false;
 				particleLib[i].gotoAndStop(1);
 			}
-			for(i = 0;i < libAmount; i++)
-			{
-				libUse[i] = -1;
-			}
 			background.visible = false;
-			background.removeEventListener(MouseEvent.CLICK,touchAdd);
+			background.removeEventListener(TouchEvent.TOUCH_TAP,touchAdd);
 		}
-		public function switchPage(dir:int):void
+		public function switchPage(dir:int):int
 		{
 			var i:int = 0;
+			var signal:int = 0;
 			if(dir>0)
 			{
 				//trace(endFrame,endFrame-frameSpan);
@@ -358,6 +378,7 @@
 					viewrear ++;
 					showParticle(i);
 				}
+				signal = i >= motion.length-1 ? 1:0;
 			}
 			else
 			{
@@ -372,7 +393,9 @@
 					viewhead --;
 					showParticle(i);
 				}
+				signal = i <= 0 ? -1:0;
 			}
+			return signal;
 		}
 		/**
 		 * "particle_motion"在进入帧时被触发，
@@ -388,7 +411,7 @@
 			*/
 			if (runFrame % 24 == 0)
 			{
-				main.game.gameTimer();
+				MovieClip(this.parent).gameTimer();
 			}
 			/*
 			 * 如果运行帧数大于等于元件的出发帧数
@@ -438,14 +461,20 @@
 					{
 						switch (motion[i].type)
 						{
+							case "n" :
+								get_apple();
+								break;
 							case "gold" :
 								motion[i].p.gotoAndStop(1);
+								MovieClip(this.parent).add_score(7);
 								break;
 							case "bomb" :
+								MovieClip(this.parent).add_time(-5);
+								bomb++;
 								motion[i].p.gotoAndStop(1);
+								MovieClip(this.parent).set_bomb(motion[i].targetX);
 								break;
 						}
-						main.game.gameEvent(motion[i].type,motion[i].targetX);
 						motion[i].p.visible = false;
 						motion[i].p = null;
 					}
@@ -459,7 +488,7 @@
 						switch (motion[i].type)
 						{
 							case "n" :
-								main.game.gameEvent("miss");
+								miss_apple();
 								break;
 							case "gold" :
 							case "bomb" :
@@ -482,6 +511,11 @@
 		//清空游戏数据
 		public function resetStats():void
 		{
+			combo = 0;
+			maxcombo = 0;
+			miss = 0;
+			bomb = 0;
+			caught = 0;
 			runFrame = 0;
 			particlePoint = 0;
 			rear = 0;
@@ -496,6 +530,42 @@
 		public function clearMotion():void
 		{
 			motion.length = 0;
+		}
+		//接到苹果时调用的函数
+		private function get_apple():void
+		{
+			combo++;
+			caught++;
+			maxcombo = combo > maxcombo ? combo:maxcombo;
+			if (combo >= 3)
+			{
+				MovieClip(this.parent).gameUI.tcombo.text = "combo " + combo + "x";
+				if (combo >= 5)
+				{
+					MovieClip(this.parent).add_score(3);
+				}
+				else
+				{
+					MovieClip(this.parent).add_score(1);
+				}
+			}
+			else
+			{
+				MovieClip(this.parent).add_score(1);
+			}
+		}
+		//错过苹果时调用的函数
+		private function miss_apple()
+		{
+			combo = 0;
+			miss++;
+			try
+			{
+				MovieClip(this.parent).gameUI.tcombo.text = "";
+			}
+			catch (error:IOError)
+			{
+			}
 		}
 		//开始动画
 		public function addMotion():void

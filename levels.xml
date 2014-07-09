@@ -1,32 +1,72 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<leveldata label="1">
-<list label="native" title="初始关卡集">
-	<level>
-		<name>Insane</name>
-		<path>native/insane.txt</path>
-		<id>e9bbfea3a9408a76c235b33e3ee7c529</id>
-	</level>
-	<level>
-		<name>一个人的狂欢</name>
-		<path>native/singleFun2.txt</path>
-		<id>c29c5ac2d3c8fa55715da1b3dba005f4</id>
-	</level>
-	<level>
-		<name>熊氏图3</name>
-		<path>native/X3.txt</path>
-		<id>e6eb7046b25fb01d6773dfb312beeabe</id>
-	</level>
-	<level>
-		<name>勇闯钓鱼岛</name>
-		<path>native/brave.txt</path>
-		<id>11674cf11cc1b13a5a01064fcf216000</id>
-	</level>
-</list>
-<list label="custom" title="用户自定义">
-	<level>
-		<name>Insane</name>
-		<path>native/insane.txt</path>
-		<id>e9bbfea3a9408a76c235b33e3ee7c529</id>
-	</level>
-</list>
+<leveldata>
+<level label="1">
+	<random>true</random>
+	<title>Trial</title>
+	<description>This is a trial</description>
+	<background>native/level1.png</background>
+	<time>45</time>
+	<normal>70</normal>
+	<bomb>5</bomb>
+	<golden>20</golden>
+	<chickspeed>12</chickspeed>
+	<basicspeed>7</basicspeed>
+	<threshold>0.4</threshold>
+	<imaginespeed>15</imaginespeed>
+	<path></path>
+</level>
+<level label="2">
+	<random>true</random>
+	<title>Quick Response</title>
+	<description>Move as quick as possible!</description>
+	<background>native/level1.png</background>
+	<time>30</time>
+	<normal>155</normal>
+	<bomb>0</bomb>
+	<golden>0</golden>
+	<chickspeed>17</chickspeed>
+	<basicspeed>13</basicspeed>
+	<threshold>0.8</threshold>
+	<imaginespeed>22</imaginespeed>
+	<path></path>
+</level>
+<level label="3">
+	<random>true</random>
+	<title>Beware of Bombs!</title>
+	<description>When bombs come, can stars far behind?</description>
+	<background>native/level1.png</background>
+	<time>40</time>
+	<normal>10</normal>
+	<bomb>85</bomb>
+	<golden>20</golden>
+	<chickspeed>12</chickspeed>
+	<basicspeed>7</basicspeed>
+	<threshold>0.4</threshold>
+	<imaginespeed>15</imaginespeed>
+	<path></path>
+</level>
+<level label="4">
+	<random>true</random>
+	<title>Try Painting</title>
+	<description>This is a trial</description>
+	<background>native/level2.png</background>
+	<time>35</time>
+	<normal>50</normal>
+	<bomb>0</bomb>
+	<golden>30</golden>
+	<chickspeed>12</chickspeed>
+	<basicspeed>7</basicspeed>
+	<threshold>0.4</threshold>
+	<imaginespeed>15</imaginespeed>
+	<path></path>
+</level>
+<level label="5">
+	<random>false</random>
+	<title>Maze III</title>
+	<description>By Li</description>
+	<background>native/level1.png</background>
+	<time>45</time>
+	<chickspeed>12</chickspeed>
+	<path>native/maze3.dat</path>
+</level>
 </leveldata>
