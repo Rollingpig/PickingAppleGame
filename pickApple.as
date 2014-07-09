@@ -5,41 +5,38 @@
 	import flash.events.TouchEvent;
 	import particleSystem;
 	import gameData;
+	import gameControl;
 	import flash.ui.Multitouch;
 	import flash.ui.MultitouchInputMode;
 	import flash.events.Event;
 	import flash.desktop.NativeApplication;
-	import bgDisplay;
+	import imgManager;
 	import flash.display.Sprite;
 	import flash.display.Shape;
 
 	public class pickApple extends MovieClip
 	{
-		public var parsys:particleSystem = new particleSystem();
-		public var chickSpeed:int = 9;
-		private var c_chickSpeed:int = 0;
-		public var score:int = 0;
-		public var remainTime:int = 10;
-		public var leveldat:XML;
-		private var savetime:int = 0;
-
-		private var papple:apple = new apple();
-		private var pbomb:bomb = new bomb();
-		public var gamedata:gameData = new gameData();
+		public var parsys:particleSystem;
+		
+		public var papple:apple = new apple();
+		public var pbomb:bomb = new bomb();
+		public var gadgets:Object = new Object();
+		public var game:gameControl;
+		
+		public var dataIO:gameData = new gameData();
+		
 		public var currentLevel:int = 1;
-
-		public var levelIcons:Array = new Array  ;
-		public var icons:Sprite = new Sprite();
+		public var currentList:int = 1;
+		private var savetime:int = 0;
+		
+		public var iconArray:Array = new Array  ;
+		public var iconList:Sprite = new Sprite();
 		private var iconmask:Shape = new Shape();
-		private var leveltotal:int = 0;
+		private var iconTotal:int = 0;
+		private var iconType:String = "list";
 
-		public var levelUI:level_ui = new level_ui();
-		public var menuUI:menu_ui = new menu_ui();
-		public var rankUI:rank_ui = new rank_ui();
-		public var aboutUI:about_ui = new about_ui();
-		private var uis:Array = new Array(menuUI,levelUI,rankUI,aboutUI);
-		private var bg:bgDisplay;
-		private var postinfo:String = "";
+		private var imgSet:imgManager;
+		private var targetPage:String = "";
 		
 		private var endSec:int = 2;
 		private var pageSig:int = 0;
@@ -47,237 +44,273 @@
 		public function pickApple()
 		{
 			stop();
+			//initailize particle system, add it to the stage
+			parsys = new particleSystem(this);
 			addChild(parsys);
 			parsys.initParticle(papple);
-			levelSettingHandler();
-			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
+			//innitialize game
+			game = new gameControl(this);
+			//initialize small objects in the stage
+			initGadgets();
+			//set UI
+			UIs.gotoAndStop(1);
+			//initailize level list
+			refreshList("list");
 			iconmask.graphics.beginFill(0x000000,1);
 			iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
 			iconmask.graphics.endFill();
-			icons.mask = iconmask;
-			bg = new bgDisplay(this,bgLayer);
-			postinfo = "menu";
-			bg.loadMenu();
+			iconList.mask = iconmask;
+			//initailize background Loader
+			imgSet = new imgManager(this,bgLayer);
+			targetPage = "menu";
+			imgSet.loadBackground(imgSet.menuUrl);
+			//set touch mode
+			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
 		}
 		/*
 		layout
 		*/
-		public function postLoad():void
+		public function switchPage():void
 		{
-			switch (postinfo)
+			iconList.visible = false;
+			switch (targetPage)
 			{
 				case "menu":
 					gotoAndStop(1);
-					showUI("menuUI");
+					UIs.gotoAndStop(1);
+					UIs.select_btn.addEventListener(TouchEvent.TOUCH_TAP,selectLevel);
+					UIs.about_btn.addEventListener(TouchEvent.TOUCH_TAP,goAbout);
+					UIs.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,exitProgram);
 					break;
 				case "start game":
-					gameLayout();
+					gotoAndStop(3);
+					parsys.hitZone = Object(root).chicken.hitBasket;
+					addChild(parsys);
+					addChild(gameUI);
+					game.refreshDataBoard();
+					resumeGame();
 					break;
 				case "select":
 					gotoAndStop(1);
-					showUI("levelUI");
+					UIs.gotoAndStop(2);
+					UIs.addChild(iconmask);
+					UIs.addChild(iconList);
+					iconList.visible = true;
+					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
+					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
+					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
 					break;
 				case "about":
-					showUI("aboutUI");
+					gotoAndStop(1);
+					UIs.gotoAndStop(4);
+					UIs.exAbout_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					UIs.backdoor_btn.addEventListener(TouchEvent.TOUCH_TAP,backdoor);
 					break;
 				case "rank":
-					showUI("rankUI");
+					gotoAndStop(1);
+					UIs.gotoAndStop(3);
+					UIs.exRank_btn.addEventListener(TouchEvent.TOUCH_TAP,exitRank);
+					UIs.rank_txt.text = dataIO.getFullRank(currentList,currentLevel);
+					UIs.title_txt.text = dataIO.levelList.list[currentList-1].level[currentLevel-1].name;
 					break;
 			}
 		}
-		public function levelSettingHandler():void
+		public function refreshList(type:String):void
 		{
-			leveltotal = 0;
+			iconType = type;
+			iconTotal = 0;
 			var cy:int = 125;
-			for (var i:int = 0; i<levelIcons.length; i++)
+			for (var i:int = 0; i<iconArray.length; i++)
 			{
-				if (icons.contains(levelIcons[i]))
+				if (iconList.contains(iconArray[i]))
 				{
-					icons.removeChild(levelIcons[i]);
+					iconList.removeChild(iconArray[i]);
 				}
 			}
-			levelIcons.length = 0;
-			for each (var prop:XML in gamedata.leveldata.level)
+			iconArray.length = 0;
+			var tree:XMLList;
+			switch(type)
 			{
-				leveltotal++;
-				var p:levelIcon = new levelIcon();
-				p.high_txt.text = gamedata.getHighest(leveltotal);
-				p.label_txt.text = String(leveltotal);
-				p.title_txt.text = prop.title;
-				p.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,showRank);
-				p.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
-				p.x = (480 - 400) / 2;
-				p.y = cy;
-				cy +=  85;
-				levelIcons.push(p);
+				case "list":
+					tree = dataIO.getFullList();
+					for each (var prop:XML in tree.list)
+					{
+						iconTotal++;
+						var p:ListIcon = new ListIcon();
+						p.label_txt.text = String(iconTotal);
+						p.title_txt.text = prop.@title;
+						p.list_btn.addEventListener(TouchEvent.TOUCH_TAP,startList);
+						p.x = (480 - 400) / 2;
+						p.y = cy;
+						cy +=  85;
+						iconArray.push(p);
+						if (! iconList.contains(p))
+						{
+							iconList.addChild(p);
+						}
+					}
+					break;
+				case "level":
+					tree = dataIO.getLevelList(currentList);
+					for each (var prop2:XML in tree.level)
+					{
+						iconTotal++;
+						var temp:levelIcon = new levelIcon();
+						temp.high_txt.text = dataIO.getHighest(currentList,iconTotal);
+						temp.label_txt.text = String(iconTotal);
+						temp.title_txt.text = prop2.name;
+						temp.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,showRank);
+						temp.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
+						temp.high_txt.text = dataIO.getHighest(currentList,iconTotal);
+						temp.x = (480 - 400) / 2;
+						temp.y = cy;
+						cy +=  85;
+						iconArray.push(temp);
+						if (! iconList.contains(temp))
+						{
+							iconList.addChild(temp);
+						}
+					}
+					break;
 			}
+			
 		}
 		public function iconsUp(event:TouchEvent):void
 		{
-			if (icons.y < 0) icons.y += 85;
+			if (iconList.y < 0) iconList.y += 85;
 		}
 		public function iconsDown(event:TouchEvent):void
 		{
-			if (icons.y + icons.height > 570) icons.y -= 85;
-		}
-		private function showUI(tname:String):void
-		{
-			for (var i:int = 0; i< uis.length; i++)
-			{
-				uis[i].visible = false;
-				topLayer.addChild(uis[i]);
-			}
-			switch (tname)
-			{
-				case "levelUI" :
-					levelUI.visible = true;
-					levelUI.addChild(iconmask);
-					levelUI.addChild(icons);
-					levelUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
-					levelUI.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
-					levelUI.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
-					for (var j:int = 0; j<levelIcons.length; j++)
-					{
-						if (! icons.contains(levelIcons[j]))
-						{
-							icons.addChild(levelIcons[j]);
-						}
-						levelIcons[j].high_txt.text = gamedata.getHighest(j+1);
-					}
-					break;
-				case "rankUI" :
-					rankUI.visible = true;
-					rankUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,exitRank);
-					rankUI.rank_txt.text = gamedata.getFullRank(currentLevel);
-					rankUI.title_txt.text = gamedata.leveldata.level[currentLevel-1].title;
-					break;
-				case "aboutUI" :
-					aboutUI.visible = true;
-					aboutUI.home_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
-					aboutUI.backdoor_btn.addEventListener(TouchEvent.TOUCH_TAP,backdoor);
-					break;
-				case "menuUI" :
-					menuUI.visible = true;
-					menuUI.select_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).selectLevel);
-					menuUI.about_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).goAbout);
-					menuUI.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,Object(root).exitProgram);
-					break;
-			}
-		}
-		public function gameLayout():void
-		{
-			gotoAndStop(3);
-			parsys.hitZone = Object(root).chicken.hitBasket;
-			addChild(parsys);
-			addChild(gameUI);
-			gameUI.tscore.text = String(score);
-			gameUI.ttime.text = stomin(remainTime);
-			gameUI.tcombo.text = "";
-			add_game_motion();
-			addChickenListener();
+			if (iconList.y + iconList.height > 570) iconList.y -= 85;
 		}
 		/*
 		functions for buttons
 		*/
-		public function returnHome(Event:TouchEvent)
+		public function backPage(Event:TouchEvent)
 		{
-			postinfo = "menu";
-			bg.loadMenu();
+			switch(iconType)
+			{
+				case "list":
+				returnHome();
+				break;
+				case "level":
+				refreshList("list");
+				break;
+			}
+		}
+		public function returnHome(Event:TouchEvent = null)
+		{
+			targetPage = "menu";
+			imgSet.loadBackground(imgSet.menuUrl);
 		}
 		public function goAbout(Event:TouchEvent)
 		{
-			postinfo = "about";
-			bg.loadSelect();
+			targetPage = "about";
+			imgSet.loadBackground(imgSet.selectUrl);
 		}
 		public function returnLevel(Event:TouchEvent)
 		{
-			gamedata.addRankResult(scoreUI.name_txt.text,score,currentLevel);
+			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
+			refreshList("level");
 			selectLevel();
 		}
 		public function selectLevel(event:TouchEvent = null)
 		{
-			postinfo = "select";
-			bg.loadSelect();
+			targetPage = "select";
+			imgSet.loadBackground(imgSet.selectUrl);
 		}
 		public function showRank(event:TouchEvent)
 		{
-			currentLevel = levelIcons.indexOf(event.target.parent) + 1;
-			showUI("rankUI");
+			currentLevel = iconArray.indexOf(event.target.parent) + 1;
+			targetPage = "rank";
+			switchPage();
 		}
 		public function exitRank(event:TouchEvent)
 		{
-			showUI("levelUI");
+			targetPage = "select";
+			switchPage();
 		}
 		public function exitProgram(Event:TouchEvent)
 		{
-			gamedata.writeRanklist();
+			dataIO.writeRanklist();
 			NativeApplication.nativeApplication.exit();
 		}
 		public function endGame(Event:TouchEvent)
 		{
 			removeChild(parsys);
 			removeChild(gameUI);
-			stop_game_motion();
+			game.stopMotion();
 			selectLevel();
 		}
-		public function resumeGame(Event:TouchEvent)
+		public function gameOver():void
 		{
-			add_game_motion();
-			addChickenListener();
+			gotoAndStop(4);
+			removeChild(parsys);
+			removeChild(gameUI);
+			scoreUI.tfscore.text = String(game.score);
+			scoreUI.tstats.text = game.gameAnalyze();
+			scoreUI.next_btn.addEventListener(TouchEvent.TOUCH_TAP,recordName);
+			game.stopMotion();
+		}
+		public function recordName(Event:TouchEvent)
+		{
+			scoreUI.gotoAndStop(2);
+			scoreUI.name_txt.text = "player";
+			scoreUI.backLevel_btn.addEventListener(TouchEvent.TOUCH_TAP,returnLevel);
+			scoreUI.saveLevel_btn.addEventListener(TouchEvent.TOUCH_TAP,editLevel);
+		}
+		public function resumeGame(Event:TouchEvent = null)
+		{
+			game.addMotion();
 			gameUI.gotoAndStop(1);
+			gameUI.menu_btn.addEventListener(TouchEvent.TOUCH_TAP,pauseGame);
 		}
 		public function pauseGame(Event:TouchEvent)
 		{
-			stop_game_motion();
-			removeChickenListener();
+			game.stopMotion();
 			gameUI.gotoAndStop(2);
+			gameUI.resume_btn.addEventListener(TouchEvent.TOUCH_TAP,resumeGame);
+			gameUI.end_btn.addEventListener(TouchEvent.TOUCH_TAP,endGame);
+			gameUI.replay_btn.addEventListener(TouchEvent.TOUCH_TAP,replayLevel);
+		}
+		public function startList(event:TouchEvent)
+		{
+			currentList = iconArray.indexOf(event.target.parent) + 1;
+			refreshList("level");
 		}
 		public function startLevel(event:TouchEvent)
 		{
 			parsys.resetStats();
+			game.resetGameStats();
 			parsys.clearMotion();
-			c_chickSpeed = 0;
-			score = 0;
-			savetime = 0;
-			currentLevel = levelIcons.indexOf(event.target.parent) + 1;
-			var lev:XML = gamedata.leveldata.level[currentLevel - 1];
-			if (lev.random == true)
-			{
-				parsys.basicSpeed = lev.basicspeed;
-				parsys.generate(lev.normal,lev.time,lev.bomb,lev.golden,lev.threshold,lev.imaginespeed);
-			}
-			else
-			{
-				parsys.loadLocal(lev.path);
-			}
-			chickSpeed = lev.chickspeed;
-			remainTime = lev.time;
-			leveldat = lev;
-			postinfo = "start game";
-			bg.loadLevel(lev.background);
+			currentLevel = iconArray.indexOf(event.target.parent) + 1;
+			//trace("currentLevel",currentLevel);
+			game.levData = dataIO.getLevel(currentList,currentLevel);
+			game.loadLevelData();
+			parsys.loadLocal(game.levData);
+			targetPage = "start game";
+			imgSet.loadBackground(game.levData.background);
 		}
 		public function replayLevel(event:TouchEvent)
 		{
-			c_chickSpeed = 0;
-			score = 0;
-			savetime = 0;
 			parsys.resetStats();
-			chickSpeed = leveldat.chickspeed;
-			remainTime = leveldat.time;
-			gameUI.tscore.text = String(score);
-			gameUI.ttime.text = stomin(remainTime);
-			gameUI.tcombo.text = "";
-			add_game_motion();
-			addChickenListener();
-			gameUI.gotoAndStop(1);
+			game.resetGameStats();
+			game.loadLevelData();
+			game.refreshDataBoard();
+			resumeGame();
 		}
 		public function saveLevel(event:TouchEvent):void
 		{
 			if (savetime == 0)
 			{
-				var path:String = parsys.saveLevel(leveltotal + 1);
-				gamedata.addLevel(name_txt.text,path,leveldat,leveltotal + 1);
-				levelSettingHandler();
+				moreopt_ui.visible = false;
+				game.levData.sequence = parsys.saveLevel();
+				game.levData.title = title_txt.text;
+				game.levData.time = int(moreopt_ui.time_txt.text);
+			 	game.levData.background = moreopt_ui.bg_txt.text;
+			 	game.levData.chickspeed = int(moreopt_ui.spd_txt.text);
+				dataIO.addLevel(game.levData);
+				refreshList("level");
 				savetime++;
 				selectLevel();
 				parsys.exitEdit();
@@ -285,21 +318,21 @@
 		}
 		public function backdoor(Event:TouchEvent)
 		{
-			var s:String = aboutUI.back_txt.text;
+			var s:String = UIs.back_txt.text;
 			var command:Array = s.split("#");
 			switch (command[0])
 			{
 				case "clr" :
-					gamedata.clearLevelResult(int(command[1]));
+					dataIO.clearLevelResult(int(command[1]));
 					break;
 				case "del" :
-					if (gamedata.deleteLevel(int(command[1])))
+					if (dataIO.deleteLevel(int(command[1])))
 					{
-						levelSettingHandler();
+						refreshList("level");
 					}
 					break;
 				case "tl" :
-					trace(gamedata.leveldata);
+					//trace(dataIO.leveldata);
 					break;
 			}
 		}
@@ -319,6 +352,13 @@
 			typegold.addEventListener(TouchEvent.TOUCH_TAP,typeItem);
 			typebomb.addEventListener(TouchEvent.TOUCH_TAP,typeItem);
 			lock.addEventListener(TouchEvent.TOUCH_TAP,toggleLock);
+			more_btn.addEventListener(TouchEvent.TOUCH_TAP,toggleMoreopt);
+			title_txt.text = game.levData.title;
+			moreopt_ui.time_txt.text = game.levData.time;
+			moreopt_ui.bg_txt.text = game.levData.background;
+			moreopt_ui.spd_txt.text = game.levData.chickspeed;
+			moreopt_ui.visible = false;
+			this.addChild(moreopt_ui);
 		}
 		public function exitEdit(Event:TouchEvent):void
 		{
@@ -341,95 +381,33 @@
 				lock.gotoAndStop(1);
 			}
 		}
+		public function toggleMoreopt(event:TouchEvent):void
+		{
+			moreopt_ui.visible = ! moreopt_ui.visible;
+		}
 		public function pageUp(Event:TouchEvent):void
 		{
-			//trace(pageSig);
-			if(pageSig !== 1)
+			if(endSec+2 <= game.levData.time)
 			{
-				pageSig = parsys.switchPage(1);
-				timerange.text = stomin(endSec) + "-" + stomin(endSec+2);
+				parsys.switchPage(1);
 				endSec += 2;
+				timerange.text = stomin(endSec-2) + "-" + stomin(endSec);
 			}
 		}
 		public function pageDown(Event:TouchEvent):void
 		{
-			//trace(pageSig);
-			if(pageSig !== -1)
+			if(endSec-2 > 0)
 			{
-				pageSig = parsys.switchPage(-1);
+				parsys.switchPage(-1);
 				endSec -= 2;
 				timerange.text = stomin(endSec-2) + "-" + stomin(endSec);
 			}
 		}
-		/*
-		basic function for game
-		*/
-		public function add_score(value:int):void
+		public function initGadgets():void 
 		{
-			score +=  value;
-			gameUI.tscore.text = String(score);
-		}
-		public function add_time(value:int):void
-		{
-			remainTime +=  value;
-			gameUI.ttime.text = stomin(remainTime);
-		}
-		public function set_bomb(tx:Number)
-		{
-			this.addChild(pbomb);
-			chicken.gotoAndPlay(2);
-			pbomb.x = tx;
-			pbomb.y = 500;
-			pbomb.gotoAndPlay(1);
-		}
-		public function gameOver():void
-		{
-			gotoAndStop(4);
-			removeChild(parsys);
-			removeChild(gameUI);
-			stop_game_motion();
-		}
-		public function gameAnalyze():String
-		{
-			var result:String = score + "\r";
-			var bonus:int = 0;
-			result +=  String(parsys.caught) + "/" + String(parsys.miss + parsys.caught) + "\r";
-			var ratio:Number = parsys.caught/(parsys.miss + parsys.caught);
-			bonus = ratio > 0.8 ? bonus + int(ratio * 250) - 200:bonus;
-			//trace(ratio,int(ratio * 250) - 200);
-			bonus +=  int(parsys.maxcombo * 0.6);
-			result +=  String(parsys.maxcombo) + "\r" + String(bonus);
-			score +=  bonus;
-			return result;
-		}
-		public function gameTimer():void
-		{
-			if (remainTime>0)
-			{
-				remainTime--;
-				gameUI.ttime.text = stomin(remainTime);
-			}
-			else
-			{
-				gameOver();
-			}
-		}
-		public function add_game_motion():void
-		{
-			addEventListener(Event.ENTER_FRAME,game_motion);
-			parsys.addMotion();
-		}
-		public function stop_game_motion():void
-		{
-			removeEventListener(Event.ENTER_FRAME,game_motion);
-			parsys.stopMotion();
-		}
-		public function game_motion(event:Event):void
-		{
-			if ((c_chickSpeed > 0 && chicken.x < 480 - chicken.width) ||(c_chickSpeed < 0 && chicken.x > 0) )
-			{
-				chicken.x +=  c_chickSpeed;
-			}
+			gadgets["plusx"] = new plusx();
+			gadgets["plusx"].name = "plusx";
+			gadgets["dectime"] = new dectime();
 		}
 		public function stomin(second:int)
 		{
@@ -459,53 +437,6 @@
 				}
 			}
 			return re;
-		}
-		/*
-		for chicken
-		*/
-		public function addChickenListener():void
-		{
-			gameUI.leftBtn.addEventListener(TouchEvent.TOUCH_BEGIN, motionLeft_BeginHandler);
-			gameUI.leftBtn.addEventListener(TouchEvent.TOUCH_END, motionLeft_EndHandler);
-			gameUI.leftBtn.addEventListener(TouchEvent.TOUCH_ROLL_OUT, motionLeft_EndHandler);
-			gameUI.leftBtn.addEventListener(TouchEvent.TOUCH_OVER, motionLeft_BeginHandler);
-			gameUI.rightBtn.addEventListener(TouchEvent.TOUCH_BEGIN, motionRight_BeginHandler);
-			gameUI.rightBtn.addEventListener(TouchEvent.TOUCH_END, motionRight_EndHandler);
-			gameUI.rightBtn.addEventListener(TouchEvent.TOUCH_ROLL_OUT, motionRight_EndHandler);
-			gameUI.rightBtn.addEventListener(TouchEvent.TOUCH_OVER, motionRight_BeginHandler);
-		}
-		public function removeChickenListener():void
-		{
-			gameUI.leftBtn.removeEventListener(TouchEvent.TOUCH_BEGIN, motionLeft_BeginHandler);
-			gameUI.leftBtn.removeEventListener(TouchEvent.TOUCH_END, motionLeft_EndHandler);
-			gameUI.leftBtn.removeEventListener(TouchEvent.TOUCH_ROLL_OUT, motionLeft_EndHandler);
-			gameUI.leftBtn.removeEventListener(TouchEvent.TOUCH_OVER, motionLeft_BeginHandler);
-			gameUI.rightBtn.removeEventListener(TouchEvent.TOUCH_BEGIN, motionRight_BeginHandler);
-			gameUI.rightBtn.removeEventListener(TouchEvent.TOUCH_END, motionRight_EndHandler);
-			gameUI.rightBtn.removeEventListener(TouchEvent.TOUCH_ROLL_OUT, motionRight_EndHandler);
-			gameUI.rightBtn.removeEventListener(TouchEvent.TOUCH_OVER, motionRight_BeginHandler);
-		}
-		public function motionLeft_BeginHandler(event:TouchEvent):void
-		{
-			c_chickSpeed =  -  chickSpeed;
-		}
-		public function motionLeft_EndHandler(event:TouchEvent):void
-		{
-			if (c_chickSpeed<0)
-			{
-				c_chickSpeed = 0;
-			}
-		}
-		public function motionRight_BeginHandler(event:TouchEvent):void
-		{
-			c_chickSpeed = chickSpeed;
-		}
-		public function motionRight_EndHandler(event:TouchEvent):void
-		{
-			if (c_chickSpeed>0)
-			{
-				c_chickSpeed = 0;
-			}
 		}
 	}
 
