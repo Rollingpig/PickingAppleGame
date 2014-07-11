@@ -161,7 +161,7 @@
 		}
 		private function LevelTxt(lev:Object):String
 		{
-			var levStr:String = "level";
+			var levStr:String = "############This is level data.Once modified, MD5 test will fail.############\r";
 			levStr += "[title:" + lev.title+"][time:" + lev.time + "][chickspeed:" + lev.chickspeed;
 			levStr += "][background:" + lev.background + "][sequence:";
 			for(var i:int = 0;i< lev.sequence.length;i++)

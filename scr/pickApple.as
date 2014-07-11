@@ -27,7 +27,6 @@
 		
 		public var currentLevel:int = 1;
 		public var currentList:int = 1;
-		private var savetime:int = 0;
 		
 		public var iconArray:Array = new Array  ;
 		public var iconList:Sprite = new Sprite();
@@ -78,6 +77,7 @@
 					UIs.gotoAndStop(1);
 					UIs.select_btn.addEventListener(TouchEvent.TOUCH_TAP,selectLevel);
 					UIs.output_btn.addEventListener(TouchEvent.TOUCH_TAP,selectOutputLevel);
+					UIs.diy_btn.addEventListener(TouchEvent.TOUCH_TAP,goDIY);
 					UIs.about_btn.addEventListener(TouchEvent.TOUCH_TAP,goAbout);
 					UIs.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,exitProgram);
 					refreshList("list");
@@ -236,6 +236,11 @@
 			targetPage = "about";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
+		public function goDIY(Event:TouchEvent)
+		{
+			game.fillBlankLevelData();
+			editLevel();
+		}
 		public function returnLevel(Event:TouchEvent)
 		{
 			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
@@ -341,20 +346,15 @@
 		}
 		public function saveLevel(event:TouchEvent):void
 		{
-			if (savetime == 0)
-			{
-				moreopt_ui.visible = false;
-				game.levData.title = title_txt.text;
-				game.levData.time = int(moreopt_ui.time_txt.text);
-			 	game.levData.background = moreopt_ui.bg_txt.text;
-			 	game.levData.chickspeed = int(moreopt_ui.spd_txt.text);
-				game.levData.sequence = parsys.saveLevel(game.levData.time);
-				dataIO.addLevel(game.levData);
-				refreshList("level");
-				savetime++;
-				selectLevel();
-				parsys.exitEdit();
-			}
+			moreopt_ui.visible = false;
+			game.levData.title = title_txt.text;
+			game.levData.time = int(moreopt_ui.time_txt.text);
+			game.levData.background = moreopt_ui.bg_txt.text;
+			game.levData.chickspeed = int(moreopt_ui.spd_txt.text);
+			game.levData.sequence = parsys.saveLevel(game.levData.time);
+			dataIO.addLevel(game.levData);
+			returnHome();
+			parsys.exitEdit();
 		}
 		public function backdoor(Event:TouchEvent)
 		{
@@ -376,7 +376,7 @@
 					break;
 			}
 		}
-		public function editLevel(Event:TouchEvent):void
+		public function editLevel(Event:TouchEvent = null):void
 		{
 			gotoAndStop(5);
 			parsys.enterEdit();

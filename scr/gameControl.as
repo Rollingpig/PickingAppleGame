@@ -93,12 +93,19 @@
 			stats["caught"] = 0;
 			c_chickSpeed = 0;
 			score = 0;
-			//main.savetime = 0;
 		}
 		public function loadLevelData():void
 		{
 			chickSpeed = levData.chickspeed;
 			remainTime = levData.time;
+		}
+		public function fillBlankLevelData():void
+		{
+			levData["chickspeed"] = 12;
+			levData["background"] = "native/level1.png";
+			levData["time"] = 40;
+			levData["title"] = "自定义";
+			levData["sequence"] = new Array();
 		}
 		public function refreshDataBoard():void
 		{
