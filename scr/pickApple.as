@@ -52,7 +52,6 @@
 			//initialize small objects in the stage
 			initGadgets();
 			//initailize level list
-			refreshList("list");
 			iconmask.graphics.beginFill(0x000000,1);
 			iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
 			iconmask.graphics.endFill();
@@ -74,13 +73,12 @@
 			{
 				case "menu":
 					gotoAndStop(1);
-					UIs.gotoAndStop(1);
-					UIs.select_btn.addEventListener(TouchEvent.TOUCH_TAP,selectLevel);
+					UIs.gotoAndStop("menu");
+					UIs.select_btn.addEventListener(TouchEvent.TOUCH_TAP,selectPlayLevel);
 					UIs.output_btn.addEventListener(TouchEvent.TOUCH_TAP,selectOutputLevel);
-					UIs.diy_btn.addEventListener(TouchEvent.TOUCH_TAP,goDIY);
+					UIs.diy_btn.addEventListener(TouchEvent.TOUCH_TAP,selectEditLevel);
 					UIs.about_btn.addEventListener(TouchEvent.TOUCH_TAP,goAbout);
 					UIs.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,exitProgram);
-					refreshList("list");
 					break;
 				case "start game":
 					gotoAndStop(3);
@@ -93,7 +91,7 @@
 				case "select":
 				case "selectOutput":
 					gotoAndStop(1);
-					UIs.gotoAndStop(2);
+					UIs.gotoAndStop("select");
 					UIs.addChild(iconmask);
 					UIs.addChild(iconList);
 					iconList.visible = true;
@@ -101,22 +99,33 @@
 					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
 					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
 					break;
+				case "selectEdit":
+					gotoAndStop(1);
+					UIs.gotoAndStop("selectEdit");
+					UIs.addChild(iconmask);
+					UIs.addChild(iconList);
+					iconList.visible = true;
+					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
+					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
+					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
+					UIs.blank_btn.addEventListener(TouchEvent.TOUCH_TAP,startBlank);
+					break;
 				case "about":
 					gotoAndStop(1);
-					UIs.gotoAndStop(4);
+					UIs.gotoAndStop("about");
 					UIs.exAbout_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
 					UIs.backdoor_btn.addEventListener(TouchEvent.TOUCH_TAP,backdoor);
 					break;
 				case "output":
 					gotoAndStop(1);
-					UIs.gotoAndStop(5);
+					UIs.gotoAndStop("output");
 					UIs.exOut_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
 					UIs.id_txt.text = dataIO.levelList.list[1].level[currentLevel-1].id;
 					UIs.str_txt.text = dataIO.getLevelStr(2,currentLevel);
 					break;
 				case "rank":
 					gotoAndStop(1);
-					UIs.gotoAndStop(3);
+					UIs.gotoAndStop("rank");
 					UIs.exRank_btn.addEventListener(TouchEvent.TOUCH_TAP,exitRank);
 					UIs.rank_txt.text = dataIO.getFullRank(currentList,currentLevel);
 					UIs.title_txt.text = dataIO.levelList.list[currentList-1].level[currentLevel-1].name;
@@ -139,7 +148,7 @@
 			var tree:XMLList;
 			switch(type)
 			{
-				case "list":
+				case "play_list":
 					tree = dataIO.getFullList();
 					for each (var prop:XML in tree.list)
 					{
@@ -147,7 +156,7 @@
 						var p:ListIcon = new ListIcon();
 						p.label_txt.text = String(iconTotal);
 						p.title_txt.text = prop.@title;
-						p.list_btn.addEventListener(TouchEvent.TOUCH_TAP,startList);
+						p.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
 						p.x = (480 - 400) / 2;
 						p.y = cy;
 						cy +=  85;
@@ -158,7 +167,7 @@
 						}
 					}
 					break;
-				case "level":
+				case "play_level":
 					tree = dataIO.getLevelList(currentList);
 					for each (var prop2:XML in tree.level)
 					{
@@ -168,7 +177,7 @@
 						temp.label_txt.text = String(iconTotal);
 						temp.title_txt.text = prop2.name;
 						temp.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,showRank);
-						temp.level_btn.addEventListener(TouchEvent.TOUCH_TAP,startLevel);
+						temp.level_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
 						temp.high_txt.text = dataIO.getHighest(currentList,iconTotal);
 						temp.x = (480 - 400) / 2;
 						temp.y = cy;
@@ -180,7 +189,7 @@
 						}
 					}
 					break;
-				case "output":
+				case "output_level":
 					tree = dataIO.levelList.list.(@label == "custom")
 					for each (var prop3:XML in tree.level)
 					{
@@ -188,7 +197,7 @@
 						var te2:ListIcon = new ListIcon();
 						te2.label_txt.text = String(iconTotal);
 						te2.title_txt.text = prop3.name;
-						te2.list_btn.addEventListener(TouchEvent.TOUCH_TAP,goOutput);
+						te2.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
 						te2.x = (480 - 400) / 2;
 						te2.y = cy;
 						cy +=  85;
@@ -196,6 +205,46 @@
 						if (! iconList.contains(te2))
 						{
 							iconList.addChild(te2);
+						}
+					}
+					break;
+				case "edit_list":
+					cy += 135;
+					tree = dataIO.getFullList();
+					for each (var prop5:XML in tree.list)
+					{
+						iconTotal++;
+						var temp5:ListIcon = new ListIcon();
+						temp5.label_txt.text = String(iconTotal);
+						temp5.title_txt.text = prop5.@title;
+						temp5.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
+						temp5.x = (480 - 400) / 2;
+						temp5.y = cy;
+						cy +=  85;
+						iconArray.push(temp5);
+						if (! iconList.contains(temp5))
+						{
+							iconList.addChild(temp5);
+						}
+					}
+					break;
+				case "edit_level":
+					cy += 135;
+					tree = dataIO.getLevelList(currentList);
+					for each (var prop4:XML in tree.level)
+					{
+						iconTotal++;
+						var temp4:ListIcon = new ListIcon();
+						temp4.label_txt.text = String(iconTotal);
+						temp4.title_txt.text = prop4.name;
+						temp4.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
+						temp4.x = (480 - 400) / 2;
+						temp4.y = cy;
+						cy +=  85;
+						iconArray.push(temp4);
+						if (! iconList.contains(temp4))
+						{
+							iconList.addChild(temp4);
 						}
 					}
 					break;
@@ -217,13 +266,17 @@
 		{
 			switch(iconType)
 			{
-				case "list":
-				case "output":
-				returnHome();
-				break;
-				case "level":
-				refreshList("list");
-				break;
+				case "play_list":
+				case "edit_list":
+				case "output_level":
+					returnHome();
+					break;
+				case "play_level":
+					refreshList("play_list");
+					break;
+				case "edit_level":
+					refreshList("edit_list");
+					break;
 			}
 		}
 		public function returnHome(Event:TouchEvent = null)
@@ -236,7 +289,7 @@
 			targetPage = "about";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
-		public function goDIY(Event:TouchEvent)
+		public function startBlank(Event:TouchEvent)
 		{
 			game.fillBlankLevelData();
 			editLevel();
@@ -244,25 +297,62 @@
 		public function returnLevel(Event:TouchEvent)
 		{
 			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
-			refreshList("level");
-			selectLevel();
+			refreshList("play_list");
+			selectPlayLevel();
 		}
-		public function selectLevel(event:TouchEvent = null)
+		public function selectPlayLevel(event:TouchEvent = null)
 		{
+			refreshList("play_list");
 			targetPage = "select";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
 		public function selectOutputLevel(event:TouchEvent)
 		{
-			refreshList("output");
+			refreshList("output_level");
 			targetPage = "selectOutput";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
-		public function goOutput(event:TouchEvent)
+		public function selectEditLevel(event:TouchEvent)
 		{
-			currentLevel = iconArray.indexOf(event.target.parent) + 1;
-			targetPage = "output";
+			refreshList("edit_list");
+			targetPage = "selectEdit";
 			imgSet.loadBackground(imgSet.selectUrl);
+		}
+		public function listBtnHandler(event:TouchEvent)
+		{
+			switch(iconType)
+			{
+				case "play_list":
+					currentList = iconArray.indexOf(event.target.parent) + 1;
+					refreshList("play_level");
+					break;
+				case "play_level":
+					parsys.resetStats();
+					game.resetGameStats();
+					parsys.clearMotion();
+					currentLevel = iconArray.indexOf(event.target.parent) + 1;
+					game.levData = dataIO.getLevel(currentList,currentLevel);
+					game.loadLevelData();
+					parsys.loadLocal(game.levData);
+					targetPage = "start game";
+					imgSet.loadBackground(game.levData.background);
+					break;
+				case "edit_list":
+					currentList = iconArray.indexOf(event.target.parent) + 1;
+					refreshList("edit_level");
+					break;
+				case "edit_level":
+					currentLevel = iconArray.indexOf(event.target.parent) + 1;
+					game.levData = dataIO.getLevel(currentList,currentLevel);
+					parsys.loadLocal(game.levData);
+					editLevel();
+					break;
+				case "output_level":
+					currentLevel = iconArray.indexOf(event.target.parent) + 1;
+					targetPage = "output";
+					switchPage();
+					break;
+			}
 		}
 		public function showRank(event:TouchEvent)
 		{
@@ -285,7 +375,7 @@
 			removeChild(parsys);
 			removeChild(gameUI);
 			game.stopMotion();
-			selectLevel();
+			selectPlayLevel();
 		}
 		public function gameOver():void
 		{
@@ -302,7 +392,6 @@
 			scoreUI.gotoAndStop(2);
 			scoreUI.name_txt.text = "player";
 			scoreUI.backLevel_btn.addEventListener(TouchEvent.TOUCH_TAP,returnLevel);
-			scoreUI.saveLevel_btn.addEventListener(TouchEvent.TOUCH_TAP,editLevel);
 		}
 		public function resumeGame(Event:TouchEvent = null)
 		{
@@ -317,24 +406,6 @@
 			gameUI.resume_btn.addEventListener(TouchEvent.TOUCH_TAP,resumeGame);
 			gameUI.end_btn.addEventListener(TouchEvent.TOUCH_TAP,endGame);
 			gameUI.replay_btn.addEventListener(TouchEvent.TOUCH_TAP,replayLevel);
-		}
-		public function startList(event:TouchEvent)
-		{
-			currentList = iconArray.indexOf(event.target.parent) + 1;
-			refreshList("level");
-		}
-		public function startLevel(event:TouchEvent)
-		{
-			parsys.resetStats();
-			game.resetGameStats();
-			parsys.clearMotion();
-			currentLevel = iconArray.indexOf(event.target.parent) + 1;
-			//trace("currentLevel",currentLevel);
-			game.levData = dataIO.getLevel(currentList,currentLevel);
-			game.loadLevelData();
-			parsys.loadLocal(game.levData);
-			targetPage = "start game";
-			imgSet.loadBackground(game.levData.background);
 		}
 		public function replayLevel(event:TouchEvent)
 		{
@@ -366,10 +437,7 @@
 					dataIO.clearLevelResult(int(command[1]));
 					break;
 				case "del" :
-					if (dataIO.deleteLevel(int(command[1])))
-					{
-						refreshList("level");
-					}
+					dataIO.deleteLevel(int(command[1]))
 					break;
 				case "tl" :
 					//trace(dataIO.leveldata);
@@ -402,7 +470,7 @@
 		}
 		public function exitEdit(Event:TouchEvent):void
 		{
-			selectLevel();
+			returnHome();
 			parsys.exitEdit();
 		}
 		public function typeItem(event:TouchEvent):void
