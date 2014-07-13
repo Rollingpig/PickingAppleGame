@@ -42,7 +42,6 @@
 
 		public function pickApple()
 		{
-			stop();
 			//initailize particle system, add it to the stage
 			parsys = new particleSystem(this);
 			addChild(parsys);
@@ -51,16 +50,12 @@
 			game = new gameControl(this);
 			//initialize small objects in the stage
 			initGadgets();
-			//initailize level list
-			iconmask.graphics.beginFill(0x000000,1);
-			iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
-			iconmask.graphics.endFill();
-			iconList.mask = iconmask;
 			//initailize background Loader
 			imgSet = new imgManager(this,bgLayer);
 			//set touch mode
 			Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
-			//
+			//Layout
+			stop();
 			returnHome();
 		}
 		/*
@@ -89,12 +84,17 @@
 					resumeGame();
 					break;
 				case "select":
+					gotoAndStop(1);
+					UIs.gotoAndStop("select");
+					refreshList("play_list");
+					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
+					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
+					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
+					break;
 				case "selectOutput":
 					gotoAndStop(1);
 					UIs.gotoAndStop("select");
-					UIs.addChild(iconmask);
-					UIs.addChild(iconList);
-					iconList.visible = true;
+					refreshList("output_level");
 					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
 					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
 					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
@@ -102,9 +102,7 @@
 				case "selectEdit":
 					gotoAndStop(1);
 					UIs.gotoAndStop("selectEdit");
-					UIs.addChild(iconmask);
-					UIs.addChild(iconList);
-					iconList.visible = true;
+					refreshList("edit_list");
 					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
 					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
 					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
@@ -140,16 +138,17 @@
 			for (var i:int = 0; i<iconArray.length; i++)
 			{
 				if (iconList.contains(iconArray[i]))
-				{
 					iconList.removeChild(iconArray[i]);
-				}
 			}
 			iconArray.length = 0;
+			iconmask.graphics.clear();
+			iconmask.graphics.beginFill(0x000000,1);			
 			var tree:XMLList;
 			switch(type)
 			{
 				case "play_list":
 					tree = dataIO.getFullList();
+					iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
 					for each (var prop:XML in tree.list)
 					{
 						iconTotal++;
@@ -169,6 +168,7 @@
 					break;
 				case "play_level":
 					tree = dataIO.getLevelList(currentList);
+					iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
 					for each (var prop2:XML in tree.level)
 					{
 						iconTotal++;
@@ -191,6 +191,7 @@
 					break;
 				case "output_level":
 					tree = dataIO.levelList.list.(@label == "custom")
+					iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
 					for each (var prop3:XML in tree.level)
 					{
 						iconTotal++;
@@ -211,6 +212,7 @@
 				case "edit_list":
 					cy += 135;
 					tree = dataIO.getFullList();
+					iconmask.graphics.drawRect((480 - 400) / 2,125+135,400,85 * 7-135);
 					for each (var prop5:XML in tree.list)
 					{
 						iconTotal++;
@@ -230,6 +232,7 @@
 					break;
 				case "edit_level":
 					cy += 135;
+					iconmask.graphics.drawRect((480 - 400) / 2,125+135,400,85 * 7-135);
 					tree = dataIO.getLevelList(currentList);
 					for each (var prop4:XML in tree.level)
 					{
@@ -249,7 +252,11 @@
 					}
 					break;
 			}
-			
+			iconmask.graphics.endFill();
+			iconList.mask = iconmask;
+			UIs.addChild(iconmask);
+			UIs.addChild(iconList);
+			iconList.visible = true;
 		}
 		public function iconsUp(event:TouchEvent):void
 		{
@@ -297,24 +304,20 @@
 		public function returnLevel(Event:TouchEvent)
 		{
 			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
-			refreshList("play_list");
 			selectPlayLevel();
 		}
 		public function selectPlayLevel(event:TouchEvent = null)
 		{
-			refreshList("play_list");
 			targetPage = "select";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
 		public function selectOutputLevel(event:TouchEvent)
 		{
-			refreshList("output_level");
 			targetPage = "selectOutput";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
 		public function selectEditLevel(event:TouchEvent)
 		{
-			refreshList("edit_list");
 			targetPage = "selectEdit";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
