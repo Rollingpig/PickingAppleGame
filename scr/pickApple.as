@@ -112,7 +112,6 @@
 					gotoAndStop(1);
 					UIs.gotoAndStop("about");
 					UIs.exAbout_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
-					UIs.backdoor_btn.addEventListener(TouchEvent.TOUCH_TAP,backdoor);
 					break;
 				case "output":
 					gotoAndStop(1);
@@ -134,7 +133,7 @@
 		{
 			iconType = type;
 			iconTotal = 0;
-			var cy:int = 125;
+			var cy:int = 0;
 			for (var i:int = 0; i<iconArray.length; i++)
 			{
 				if (iconList.contains(iconArray[i]))
@@ -148,7 +147,9 @@
 			{
 				case "play_list":
 					tree = dataIO.getFullList();
-					iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
+					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 7);
+					iconmask.y = 125;
+					iconList.y = 125;
 					for each (var prop:XML in tree.list)
 					{
 						iconTotal++;
@@ -168,7 +169,9 @@
 					break;
 				case "play_level":
 					tree = dataIO.getLevelList(currentList);
-					iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
+					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 7);
+					iconmask.y = 125;
+					iconList.y = 125;
 					for each (var prop2:XML in tree.level)
 					{
 						iconTotal++;
@@ -191,7 +194,9 @@
 					break;
 				case "output_level":
 					tree = dataIO.levelList.list.(@label == "custom")
-					iconmask.graphics.drawRect((480 - 400) / 2,125,400,85 * 7);
+					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 7);
+					iconmask.y = 125;
+					iconList.y = 125;
 					for each (var prop3:XML in tree.level)
 					{
 						iconTotal++;
@@ -210,9 +215,10 @@
 					}
 					break;
 				case "edit_list":
-					cy += 135;
+					iconList.y = 125 + 135;
 					tree = dataIO.getFullList();
-					iconmask.graphics.drawRect((480 - 400) / 2,125+135,400,85 * 7-135);
+					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 5);
+					iconmask.y = 125+135;
 					for each (var prop5:XML in tree.list)
 					{
 						iconTotal++;
@@ -231,8 +237,9 @@
 					}
 					break;
 				case "edit_level":
-					cy += 135;
-					iconmask.graphics.drawRect((480 - 400) / 2,125+135,400,85 * 7-135);
+					iconList.y = 125 + 135;
+					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 5);
+					iconmask.y = 125+135;
 					tree = dataIO.getLevelList(currentList);
 					for each (var prop4:XML in tree.level)
 					{
@@ -260,11 +267,12 @@
 		}
 		public function iconsUp(event:TouchEvent):void
 		{
-			if (iconList.y < 0) iconList.y += 85;
+			if (iconList.y < iconmask.y) iconList.y += 85;
 		}
 		public function iconsDown(event:TouchEvent):void
 		{
-			if (iconList.y + iconList.height > 570) iconList.y -= 85;
+			//trace(iconList.height);
+			if (iconList.y + iconList.height > iconmask.height + iconmask.y) iconList.y -= 85;
 		}
 		/*
 		functions for buttons
@@ -331,8 +339,8 @@
 					break;
 				case "play_level":
 					parsys.resetStats();
-					game.resetGameStats();
 					parsys.clearMotion();
+					game.resetGameStats();
 					currentLevel = iconArray.indexOf(event.target.parent) + 1;
 					game.levData = dataIO.getLevel(currentList,currentLevel);
 					game.loadLevelData();
@@ -341,6 +349,7 @@
 					imgSet.loadBackground(game.levData.background);
 					break;
 				case "edit_list":
+					parsys.clearMotion();
 					currentList = iconArray.indexOf(event.target.parent) + 1;
 					refreshList("edit_level");
 					break;
@@ -373,22 +382,24 @@
 			dataIO.writeRanklist();
 			NativeApplication.nativeApplication.exit();
 		}
-		public function endGame(Event:TouchEvent)
+		public function haltGame(Event:TouchEvent)
 		{
+			endGame();
+			selectPlayLevel();
+		}
+		public function endGame()
+		{
+			game.stopMotion();
 			removeChild(parsys);
 			removeChild(gameUI);
-			game.stopMotion();
-			selectPlayLevel();
 		}
 		public function gameOver():void
 		{
+			endGame();
 			gotoAndStop(4);
-			removeChild(parsys);
-			removeChild(gameUI);
 			scoreUI.tfscore.text = String(game.score);
 			scoreUI.tstats.text = game.gameAnalyze();
 			scoreUI.next_btn.addEventListener(TouchEvent.TOUCH_TAP,recordName);
-			game.stopMotion();
 		}
 		public function recordName(Event:TouchEvent)
 		{
@@ -407,7 +418,7 @@
 			game.stopMotion();
 			gameUI.gotoAndStop(2);
 			gameUI.resume_btn.addEventListener(TouchEvent.TOUCH_TAP,resumeGame);
-			gameUI.end_btn.addEventListener(TouchEvent.TOUCH_TAP,endGame);
+			gameUI.end_btn.addEventListener(TouchEvent.TOUCH_TAP,haltGame);
 			gameUI.replay_btn.addEventListener(TouchEvent.TOUCH_TAP,replayLevel);
 		}
 		public function replayLevel(event:TouchEvent)
@@ -429,23 +440,6 @@
 			dataIO.addLevel(game.levData);
 			returnHome();
 			parsys.exitEdit();
-		}
-		public function backdoor(Event:TouchEvent)
-		{
-			var s:String = UIs.back_txt.text;
-			var command:Array = s.split("#");
-			switch (command[0])
-			{
-				case "clr" :
-					dataIO.clearLevelResult(int(command[1]));
-					break;
-				case "del" :
-					dataIO.deleteLevel(int(command[1]))
-					break;
-				case "tl" :
-					//trace(dataIO.leveldata);
-					break;
-			}
 		}
 		public function editLevel(Event:TouchEvent = null):void
 		{

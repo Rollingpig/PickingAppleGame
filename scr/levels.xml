@@ -2,9 +2,9 @@
 <leveldata label="1">
 <list label="native" title="初始关卡集">
 	<level>
-		<name>Insane</name>
-		<path>native/insane.txt</path>
-		<id>e9bbfea3a9408a76c235b33e3ee7c529</id>
+		<name>怎么玩？</name>
+		<path>native/trial.txt</path>
+		<id>98beaeddeac079247748b37aa4ff9d5d</id>
 	</level>
 	<level>
 		<name>一个人的狂欢</name>
@@ -12,9 +12,14 @@
 		<id>c29c5ac2d3c8fa55715da1b3dba005f4</id>
 	</level>
 	<level>
+		<name>Insane</name>
+		<path>native/insane.txt</path>
+		<id>e9bbfea3a9408a76c235b33e3ee7c529</id>
+	</level>
+	<level>
 		<name>熊氏图3</name>
 		<path>native/X3.txt</path>
-		<id>e6eb7046b25fb01d6773dfb312beeabe</id>
+		<id>3422ad10bfcc09356d2d5ca8685cddf8</id>
 	</level>
 	<level>
 		<name>勇闯钓鱼岛</name>
@@ -24,7 +29,7 @@
 </list>
 <list label="custom" title="我的作品">
 	<level>
-		<name>Insane</name>
+		<name>示例关卡Insane</name>
 		<path>native/insane.txt</path>
 		<id>e9bbfea3a9408a76c235b33e3ee7c529</id>
 	</level>

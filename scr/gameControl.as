@@ -38,6 +38,7 @@
 						main.gameUI.tcombo.text = "combo " + stats.combo + "x";
 					}
 					var incr:int = stats.combo / 3 + 1;
+					incr = incr >10 ? 10:incr;
 					add_score(incr);
 					setGadget(main.gadgets.plusx,targetX,incr);
 					break;
@@ -103,9 +104,14 @@
 		{
 			levData["chickspeed"] = 12;
 			levData["background"] = "native/level1.png";
-			levData["time"] = 40;
+			levData["time"] = 30;
 			levData["title"] = "自定义";
-			levData["sequence"] = new Array();
+			if (levData["sequence"] == null)
+			{
+				levData["sequence"]= new Array();
+			}else{
+				levData["sequence"].length = 0;
+			}
 		}
 		public function refreshDataBoard():void
 		{
@@ -165,6 +171,7 @@
 			{
 				if (se<10)
 				{
+					if (se < 0) se = 0;
 					re = "0" + min + ":0" + se;
 				}
 				else
@@ -176,6 +183,7 @@
 			{
 				if (se<10)
 				{
+					if (se < 0) se = 0;
 					re = min + ":0" + se;
 				}
 				else
