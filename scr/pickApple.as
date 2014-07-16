@@ -23,13 +23,14 @@
 		public var gadgets:Object = new Object();
 		public var game:gameControl;
 		
-		public var dataIO:gameData = new gameData();
+		public var dataIO:gameData;
 		
 		public var currentLevel:int = 1;
 		public var currentList:int = 1;
 		
 		public var iconArray:Array = new Array  ;
 		public var iconList:Sprite = new Sprite();
+		private var iconY:int = 0;
 		private var iconmask:Shape = new Shape();
 		private var iconTotal:int = 0;
 		private var iconType:String = "list";
@@ -42,6 +43,7 @@
 
 		public function pickApple()
 		{
+			dataIO = new gameData(this);
 			//initailize particle system, add it to the stage
 			parsys = new particleSystem(this);
 			addChild(parsys);
@@ -69,10 +71,11 @@
 				case "menu":
 					gotoAndStop(1);
 					UIs.gotoAndStop("menu");
-					UIs.select_btn.addEventListener(TouchEvent.TOUCH_TAP,selectPlayLevel);
-					UIs.output_btn.addEventListener(TouchEvent.TOUCH_TAP,selectOutputLevel);
-					UIs.diy_btn.addEventListener(TouchEvent.TOUCH_TAP,selectEditLevel);
-					UIs.about_btn.addEventListener(TouchEvent.TOUCH_TAP,goAbout);
+					UIs.selectPlay_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
+					UIs.selectOutput_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
+					UIs.selectEdit_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
+					UIs.about_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
+					UIs.update_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
 					UIs.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,exitProgram);
 					break;
 				case "start game":
@@ -83,7 +86,7 @@
 					game.refreshDataBoard();
 					resumeGame();
 					break;
-				case "select":
+				case "selectPlay":
 					gotoAndStop(1);
 					UIs.gotoAndStop("select");
 					refreshList("play_list");
@@ -120,6 +123,12 @@
 					UIs.id_txt.text = dataIO.levelList.list[1].level[currentLevel-1].id;
 					UIs.str_txt.text = dataIO.getLevelStr(2,currentLevel);
 					break;
+				case "update":
+					gotoAndStop(1);
+					UIs.gotoAndStop("update");
+					UIs.startUpdate_btn.addEventListener(TouchEvent.TOUCH_TAP,startUpdate);
+					UIs.exUp_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					break;
 				case "rank":
 					gotoAndStop(1);
 					UIs.gotoAndStop("rank");
@@ -133,7 +142,7 @@
 		{
 			iconType = type;
 			iconTotal = 0;
-			var cy:int = 0;
+			iconY = 0;
 			for (var i:int = 0; i<iconArray.length; i++)
 			{
 				if (iconList.contains(iconArray[i]))
@@ -157,14 +166,7 @@
 						p.label_txt.text = String(iconTotal);
 						p.title_txt.text = prop.@title;
 						p.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
-						p.x = (480 - 400) / 2;
-						p.y = cy;
-						cy +=  85;
-						iconArray.push(p);
-						if (! iconList.contains(p))
-						{
-							iconList.addChild(p);
-						}
+						addIconToList(p);
 					}
 					break;
 				case "play_level":
@@ -182,14 +184,14 @@
 						temp.rank_btn.addEventListener(TouchEvent.TOUCH_TAP,showRank);
 						temp.level_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
 						temp.high_txt.text = dataIO.getHighest(currentList,iconTotal);
-						temp.x = (480 - 400) / 2;
-						temp.y = cy;
-						cy +=  85;
-						iconArray.push(temp);
-						if (! iconList.contains(temp))
-						{
-							iconList.addChild(temp);
-						}
+						addIconToList(temp);
+					}
+					if(iconTotal == 0)
+					{
+						var temp7:ListIcon = new ListIcon();
+						temp7.title_txt.text = "暂无关卡";
+						temp7.label_txt.text = "";
+						addIconToList(temp7);
 					}
 					break;
 				case "output_level":
@@ -204,14 +206,7 @@
 						te2.label_txt.text = String(iconTotal);
 						te2.title_txt.text = prop3.name;
 						te2.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
-						te2.x = (480 - 400) / 2;
-						te2.y = cy;
-						cy +=  85;
-						iconArray.push(te2);
-						if (! iconList.contains(te2))
-						{
-							iconList.addChild(te2);
-						}
+						addIconToList(te2);
 					}
 					break;
 				case "edit_list":
@@ -226,14 +221,7 @@
 						temp5.label_txt.text = String(iconTotal);
 						temp5.title_txt.text = prop5.@title;
 						temp5.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
-						temp5.x = (480 - 400) / 2;
-						temp5.y = cy;
-						cy +=  85;
-						iconArray.push(temp5);
-						if (! iconList.contains(temp5))
-						{
-							iconList.addChild(temp5);
-						}
+						addIconToList(temp5);
 					}
 					break;
 				case "edit_level":
@@ -248,14 +236,14 @@
 						temp4.label_txt.text = String(iconTotal);
 						temp4.title_txt.text = prop4.name;
 						temp4.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
-						temp4.x = (480 - 400) / 2;
-						temp4.y = cy;
-						cy +=  85;
-						iconArray.push(temp4);
-						if (! iconList.contains(temp4))
-						{
-							iconList.addChild(temp4);
-						}
+						addIconToList(temp4);
+					}
+					if(iconTotal == 0)
+					{
+						var temp8:ListIcon = new ListIcon();
+						temp8.title_txt.text = "暂无关卡";
+						temp8.label_txt.text = "";
+						addIconToList(temp8);
 					}
 					break;
 			}
@@ -264,6 +252,17 @@
 			UIs.addChild(iconmask);
 			UIs.addChild(iconList);
 			iconList.visible = true;
+		}
+		private function addIconToList(piece:MovieClip):void
+		{
+			piece.x = (480 - 400) / 2;
+			piece.y = iconY;
+			iconY +=  85;
+			iconArray.push(piece);
+			if (! iconList.contains(piece))
+			{
+				iconList.addChild(piece);
+			}
 		}
 		public function iconsUp(event:TouchEvent):void
 		{
@@ -299,9 +298,15 @@
 			targetPage = "menu";
 			imgSet.loadBackground(imgSet.menuUrl);
 		}
-		public function goAbout(Event:TouchEvent)
+		public function returnLevel(Event:TouchEvent)
 		{
-			targetPage = "about";
+			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
+			targetPage = "selectPlay";
+			imgSet.loadBackground(imgSet.selectUrl);
+		}
+		public function goPages(event:TouchEvent)
+		{
+			targetPage = event.target.name.split("_")[0];
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
 		public function startBlank(Event:TouchEvent)
@@ -309,25 +314,11 @@
 			game.fillBlankLevelData();
 			editLevel();
 		}
-		public function returnLevel(Event:TouchEvent)
+		public function startUpdate(Event:TouchEvent)
 		{
-			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
-			selectPlayLevel();
-		}
-		public function selectPlayLevel(event:TouchEvent = null)
-		{
-			targetPage = "select";
-			imgSet.loadBackground(imgSet.selectUrl);
-		}
-		public function selectOutputLevel(event:TouchEvent)
-		{
-			targetPage = "selectOutput";
-			imgSet.loadBackground(imgSet.selectUrl);
-		}
-		public function selectEditLevel(event:TouchEvent)
-		{
-			targetPage = "selectEdit";
-			imgSet.loadBackground(imgSet.selectUrl);
+			dataIO.updateProcess();
+			UIs.startUpdate_btn.removeEventListener(TouchEvent.TOUCH_TAP,startUpdate);
+			UIs.feedback_txt.text = "正在连接..."
 		}
 		public function listBtnHandler(event:TouchEvent)
 		{
@@ -374,7 +365,7 @@
 		}
 		public function exitRank(event:TouchEvent)
 		{
-			targetPage = "select";
+			targetPage = "selectPlay";
 			switchPage();
 		}
 		public function exitProgram(Event:TouchEvent)
@@ -385,9 +376,10 @@
 		public function haltGame(Event:TouchEvent)
 		{
 			endGame();
-			selectPlayLevel();
+			targetPage = "selectPlay";
+			imgSet.loadBackground(imgSet.selectUrl);
 		}
-		public function endGame()
+		public function endGame():void
 		{
 			game.stopMotion();
 			removeChild(parsys);

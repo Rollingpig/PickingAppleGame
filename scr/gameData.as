@@ -3,6 +3,10 @@
 	import flash.filesystem.*;
 	import flash.errors.IOError;
 	import MD5;
+	import flash.events.Event; 
+	import flash.net.URLLoader; 
+	import flash.net.URLRequest; 
+	import flash.display.MovieClip
 	
 	public class gameData
 	{
@@ -16,9 +20,16 @@
 		public var ranklist:Object = new Object();
 		public var levelList:XML;
 		private var md5:MD5 = new MD5();
+		
+		private var main:MovieClip;
+		private var dataLoader:URLLoader;
+		private var downloads:Array = new Array();
+		private var titles:Array = new Array();
+		private var flag:int = 0;
 
-		public function gameData()
+		public function gameData(mainTimeline:MovieClip)
 		{
+			main = mainTimeline;
 			rankfile = rankfile.resolvePath("pickapple/ranks.txt");
 			levelfile = levelfile.resolvePath("pickapple/levels.xml");
 			originLevel = originLevel.resolvePath("levels.xml");
@@ -141,10 +152,18 @@
 			levelStr = LevelTxt(newlevel);
 			idCode = md5.calculate(levelStr);
 			var path:String = "pickapple/" + idCode + ".txt";
+			add_txtFile(levelStr,path,idCode);
+			add_XML(newlevel.title,path,idCode,"custom");
+		}
+		private function add_txtFile(str,path,idCode:String):void
+		{
 			levelData = File.documentsDirectory.resolvePath(path);
 			fileStream.open(levelData, FileMode.WRITE);
-			fileStream.writeUTF(levelStr);
+			fileStream.writeUTF(str);
 			fileStream.close();
+		}
+		private function add_XML(title,path,idCode,type:String):void
+		{
 			var lev:XML =  
 				<level>
 					<name>name</name>
@@ -152,12 +171,10 @@
 					<id>id</id>
 				</level>;
 			lev.path = path;
-			lev.name = newlevel.title;
+			lev.name = title;
 			lev.id = idCode;
-			levelList.list.(@label == "custom").appendChild(lev);
+			levelList.list.(@label == type).appendChild(lev);
 			ranklist[idCode] = new Array();
-			//trace("level added");
-			//trace(levelList);
 		}
 		private function LevelTxt(lev:Object):String
 		{
@@ -219,13 +236,7 @@
 			if(targetID !== "")
 			{
 				ranklist[targetID].push({name:player,score:nscore});
-				//trace(ranklist[targetID]);
-				//trace(ranklist[targetID + ""]);
 				ranklist[targetID].sortOn("score",Array.DESCENDING | Array.NUMERIC);
-				if (ranklist[targetID].length > 25)
-				{
-					ranklist[targetID].length = 25;
-				}
 				//trace(ranklist[targetID].length);
 			}
 		}
@@ -233,20 +244,11 @@
 		{
 			//ranklist[level].length = 0;
 		}
-		public function deleteLevel(tlabel:int):Boolean
+		public function deleteLevel(tlevel:int):Boolean
 		{
-			/*
 			var file:File = File.documentsDirectory;
-			file = file.resolvePath(levelList.level.(@label == String(tlabel)).path);
-			delete levelList.level.(@label == String(tlabel))[0];
-			for each (var lev:XML in levelList.level)
-			{
-				if(int(lev.@label)>tlabel)
-				{
-					lev.@label = int(lev.@label)-1;
-				}
-			}
-			ranklist.splice(tlabel,1);
+			file = file.resolvePath(levelList.list.(@label == "custom")[tlevel-1].path);
+			delete levelList.list.(@label == "custom")[tlevel-1];
 			try
 			{
 				file.deleteFile();
@@ -256,8 +258,67 @@
 				//none
 			}
 			trace(levelList);
-			*/
 			return true;
+		}
+		public function updateProcess():void
+		{
+			var req:URLRequest = new URLRequest("https://raw.githubusercontent.com/Rollingpig/PickingAppleGame/master/resource/onlinelevels.xml"); 
+			dataLoader = new URLLoader(req); 
+			dataLoader.addEventListener(Event.COMPLETE, updateProcess_2); 
+		}
+		private function updateProcess_2(event:Event):void 
+		{ 
+    		var newlist:XML = XML(dataLoader.data);
+			main.UIs.feedback_txt.text = "连接成功，正在扫描.."
+			var oldlist:Array = new Array();
+			downloads.length = 0;
+			titles.length = 0;
+			flag = 1;
+			for each (var lev:XML in levelList.list.(@label == "net").level)
+			{
+				oldlist.push(String(lev.id));
+			}
+			for each (var lev2:XML in newlist.level)
+			{
+				var str:String = lev2.id;
+				if(oldlist.indexOf(str,0) == -1)
+				{
+					downloads.push(lev2.id);
+					titles.push(lev2.name);
+				}
+			}
+			if(downloads.length !== 0)
+			{
+				updateProcess_3();
+			}
+			else
+			{
+				main.UIs.feedback_txt.text = "无可用更新，更新程序结束"
+			}
+		}
+		private function updateProcess_3():void 
+		{
+			if(flag <= downloads.length)
+			{
+				var str:String = "https://raw.githubusercontent.com/Rollingpig/PickingAppleGame/master/resource/";
+				str = str + downloads[flag-1] + ".txt";
+				main.UIs.feedback_txt.text = "关卡下载" + flag + "/" + downloads.length;
+				dataLoader = new URLLoader(new URLRequest(str)); 
+				dataLoader.addEventListener(Event.COMPLETE, updateProcess_4);
+			}
+			else
+			{
+				main.UIs.feedback_txt.text = "关卡下载完毕，更新程序结束";
+			}
+		}
+		private function updateProcess_4(event:Event):void
+		{
+			var levelStr:String = dataLoader.data;
+			var path:String = "pickapple/" + downloads[flag-1] + ".txt";
+			add_txtFile(levelStr,path,downloads[flag-1]);
+			add_XML(titles[flag-1],path,downloads[flag-1],"net");
+			flag++;
+			updateProcess_3();
 		}
 	}
 

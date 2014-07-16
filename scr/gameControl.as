@@ -47,7 +47,7 @@
 					setGadget(main.gadgets.plusx,targetX,7);
 					break;
 				case "bomb" :
-					add_time(-5);
+					add_time(-3);
 					stats.bomb++;
 					set_bomb(targetX);
 					setGadget(main.gadgets.dectime,targetX);
@@ -74,12 +74,12 @@
 					target.tas.text = "+" + value;
 					break;
 			}
-			main.addChild(target);
+			main.effectLayer.addChild(target);
 			target.gotoAndPlay(2);
 		}
 		public function set_bomb(tx:Number)
 		{
-			main.addChild(main.pbomb);
+			main.effectLayer.addChild(main.pbomb);
 			main.chicken.gotoAndPlay(2);
 			main.pbomb.x = tx;
 			main.pbomb.y = 500;

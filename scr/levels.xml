@@ -27,11 +27,13 @@
 		<id>11674cf11cc1b13a5a01064fcf216000</id>
 	</level>
 </list>
-<list label="custom" title="我的作品">
+<list label="custom" title="我的作品集">
 	<level>
 		<name>示例关卡Insane</name>
 		<path>native/insane.txt</path>
 		<id>e9bbfea3a9408a76c235b33e3ee7c529</id>
 	</level>
+</list>
+<list label="net" title="网络关卡集">
 </list>
 </leveldata>
