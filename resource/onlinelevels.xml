@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<leveldata label="1">
+	<level>
+		<name>怎么玩？</name>
+		<path>native/trial.txt</path>
+		<id>98beaeddeac079247748b37aa4ff9d5d</id>
+	</level>
+	<level>
+		<name>Insane</name>
+		<path>native/insane.txt</path>
+		<id>e9bbfea3a9408a76c235b33e3ee7c529</id>
+	</level>
+</leveldata>
