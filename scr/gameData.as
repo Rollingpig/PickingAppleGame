@@ -262,6 +262,19 @@
 		}
 		public function updateProcess():void
 		{
+			var flag:Boolean = true;
+			for each (var lev:XML in levelList.list)
+			{
+				if(lev.@label == "net") flag = false;
+			}
+			if(flag)
+			{
+				var nlist:XML = <list label = "" title = ""></list>;
+				nlist.@label = "net";
+				nlist.@title = "网络关卡集";
+				levelList.appendChild(nlist);
+			}
+			trace(levelList);
 			var req:URLRequest = new URLRequest("https://raw.githubusercontent.com/Rollingpig/PickingAppleGame/master/resource/onlinelevels.xml"); 
 			dataLoader = new URLLoader(req); 
 			dataLoader.addEventListener(Event.COMPLETE, updateProcess_2); 
