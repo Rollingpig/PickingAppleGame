@@ -277,7 +277,7 @@
 			motion[index].p.y = (endFrame - motion[index].reachFrame)/frameSpan * maskHeight + delY;
 			motion[index].p.addEventListener(TouchEvent.TOUCH_TAP,touchDel);
 			//trace("show: index",index," p",motion[index].p," lib_index",i," reachFrame",motion[index].reachFrame," y",motion[index].p.y);
-			forbid = viewrear - viewhead + 1 >= (libAmount - 8);
+			forbid = viewrear - viewhead + 1 >= (libAmount - 10);
 			//trace(forbid);
 		}
 		public function hideParticle(index:int):void
