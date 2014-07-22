@@ -35,7 +35,7 @@
 					stats.maxcombo = stats.combo > stats.maxcombo ? stats.combo:stats.maxcombo;
 					if (stats.combo >= 3)
 					{
-						main.gameUI.tcombo.text = "combo " + stats.combo + "x";
+						main.gameUI.tcombo.text = "COMBO " + stats.combo + "x";
 					}
 					var incr:int = stats.combo / 3 + 1;
 					incr = incr >10 ? 10:incr;
@@ -121,14 +121,9 @@
 		}
 		public function gameAnalyze():String
 		{
-			var result:String = score + "\r";
-			var bonus:int = 0;
+			var result:String = "";
 			result +=  String(stats.caught) + "/" + String(stats.miss + stats.caught) + "\r";
-			//var ratio:Number = stats.caught/(stats.miss + stats.caught);
-			//bonus = ratio > 0.8 ? bonus + int(ratio * 250) - 200:bonus;
-			//bonus +=  int(stats.maxcombo * 0.6);
-			result +=  String(stats.maxcombo) + "\r" + String(bonus);
-			score +=  bonus;
+			result +=  String(stats.maxcombo);
 			return result;
 		}
 		public function gameTimer():void

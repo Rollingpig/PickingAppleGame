@@ -40,7 +40,7 @@
 		 * libAmount指particleLib的元件总数
 		*/
 		private var particleLib:Vector.<MovieClip> = new Vector.<MovieClip>  ;
-		private const libAmount:int = 25;
+		private const libAmount:int = 28;
 		private var particlePoint:int = 0;
 		private var rear:int = 0;
 		private var head:int = 0;
@@ -277,7 +277,7 @@
 			motion[index].p.y = (endFrame - motion[index].reachFrame)/frameSpan * maskHeight + delY;
 			motion[index].p.addEventListener(TouchEvent.TOUCH_TAP,touchDel);
 			//trace("show: index",index," p",motion[index].p," lib_index",i," reachFrame",motion[index].reachFrame," y",motion[index].p.y);
-			forbid = viewrear - viewhead + 1 >= libAmount;
+			forbid = viewrear - viewhead + 1 >= (libAmount - 8);
 			//trace(forbid);
 		}
 		public function hideParticle(index:int):void

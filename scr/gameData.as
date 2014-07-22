@@ -333,6 +333,16 @@
 			flag++;
 			updateProcess_3();
 		}
+		public function getAbout():void
+		{
+			var req:URLRequest = new URLRequest("https://raw.githubusercontent.com/Rollingpig/PickingAppleGame/master/resource/about.txt"); 
+			dataLoader = new URLLoader(req); 
+			dataLoader.addEventListener(Event.COMPLETE, getAbout_2); 
+		}
+		private function getAbout_2(event:Event):void 
+		{
+			main.UIs.about_txt.text = String(dataLoader.data);
+		}
 	}
 
 }

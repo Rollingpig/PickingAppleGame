@@ -75,11 +75,11 @@
 					UIs.selectOutput_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
 					UIs.selectEdit_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
 					UIs.about_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
-					UIs.update_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
 					UIs.exit_btn.addEventListener(TouchEvent.TOUCH_TAP,exitProgram);
+					UIs.checkUpdate_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
 					break;
 				case "start game":
-					gotoAndStop(3);
+					gotoAndStop(2);
 					parsys.hitZone = Object(root).chicken.hitBasket;
 					addChild(parsys);
 					addChild(gameUI);
@@ -90,6 +90,14 @@
 					gotoAndStop(1);
 					UIs.gotoAndStop("select");
 					refreshList("play_list");
+					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
+					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
+					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
+					break;
+				case "selectLevel":
+					gotoAndStop(1);
+					UIs.gotoAndStop("select");
+					refreshList("play_level");
 					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
 					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
 					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
@@ -114,6 +122,7 @@
 				case "about":
 					gotoAndStop(1);
 					UIs.gotoAndStop("about");
+					dataIO.getAbout();
 					UIs.exAbout_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
 					break;
 				case "output":
@@ -123,7 +132,7 @@
 					UIs.id_txt.text = dataIO.levelList.list[1].level[currentLevel-1].id;
 					UIs.str_txt.text = dataIO.getLevelStr(2,currentLevel);
 					break;
-				case "update":
+				case "checkUpdate":
 					gotoAndStop(1);
 					UIs.gotoAndStop("update");
 					UIs.startUpdate_btn.addEventListener(TouchEvent.TOUCH_TAP,startUpdate);
@@ -301,7 +310,7 @@
 		public function returnLevel(Event:TouchEvent)
 		{
 			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
-			targetPage = "selectPlay";
+			targetPage = "selectLevel";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
 		public function goPages(event:TouchEvent)
@@ -365,7 +374,7 @@
 		}
 		public function exitRank(event:TouchEvent)
 		{
-			targetPage = "selectPlay";
+			targetPage = "selectLevel";
 			switchPage();
 		}
 		public function exitProgram(Event:TouchEvent)
@@ -376,7 +385,7 @@
 		public function haltGame(Event:TouchEvent)
 		{
 			endGame();
-			targetPage = "selectPlay";
+			targetPage = "selectLevel";
 			imgSet.loadBackground(imgSet.selectUrl);
 		}
 		public function endGame():void
@@ -388,7 +397,7 @@
 		public function gameOver():void
 		{
 			endGame();
-			gotoAndStop(4);
+			gotoAndStop(3);
 			scoreUI.tfscore.text = String(game.score);
 			scoreUI.tstats.text = game.gameAnalyze();
 			scoreUI.next_btn.addEventListener(TouchEvent.TOUCH_TAP,recordName);
@@ -435,7 +444,7 @@
 		}
 		public function editLevel(Event:TouchEvent = null):void
 		{
-			gotoAndStop(5);
+			gotoAndStop(4);
 			parsys.enterEdit();
 			pageSig = -1;
 			addChild(parsys);
