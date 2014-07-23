@@ -1,18 +1,15 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<leveldata label="1">
+<leveldata label="1" version="38">
 	<level>
 		<name>怎么玩？</name>
-		<path>native/trial.txt</path>
 		<id>98beaeddeac079247748b37aa4ff9d5d</id>
 	</level>
 	<level>
 		<name>带刺玫瑰</name>
-		<path>native/Rose.txt</path>
 		<id>e9b53db61c16794e0fbb79abc1b6948d</id>
 	</level>
 	<level>
 		<name>经经</name>
-		<path>native/Rose.txt</path>
 		<id>7f93c8e2f7aed7ee5d8c182dc67b5afc</id>
 	</level>
 </leveldata>
