@@ -3,13 +3,31 @@
 	<level>
 		<name>怎么玩？</name>
 		<id>98beaeddeac079247748b37aa4ff9d5d</id>
+		<background></background>
 	</level>
 	<level>
 		<name>带刺玫瑰</name>
 		<id>e9b53db61c16794e0fbb79abc1b6948d</id>
+		<background></background>
 	</level>
 	<level>
 		<name>经经</name>
 		<id>7f93c8e2f7aed7ee5d8c182dc67b5afc</id>
+		<background></background>
+	</level>
+	<level>
+		<name>误入陷阱</name>
+		<id>6d86fb764053ca027e088576f2ae01fe</id>
+		<background></background>
+	</level>
+	<level>
+		<name>迷宫</name>
+		<id>6dd52d81e71e97951b6d239f3939ad6b</id>
+		<background></background>
+	</level>
+	<level>
+		<name>第一个变态的正常关卡</name>
+		<id>ee843ad22aea652dfaeba7525fc50b1b</id>
+		<background></background>
 	</level>
 </leveldata>
