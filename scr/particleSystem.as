@@ -40,10 +40,11 @@
 		 * libAmount指particleLib的元件总数
 		*/
 		private var particleLib:Vector.<MovieClip> = new Vector.<MovieClip>  ;
-		private const libAmount:int = 28;
-		private var particlePoint:int = 0;
+		private const libAmount:int = 30;
 		private var rear:int = 0;
 		private var head:int = 0;
+		private var libStack:Vector.<int> = new Vector.<int>;
+		private var stackPoint:int = -1;
 		
 		//记录运动序列已经进行到第几帧
 		private var runFrame:int = 0;
@@ -61,7 +62,6 @@
 		private var file:File = File.documentsDirectory;
 		private var fileStream:FileStream = new FileStream();
 		
-		private var libUse:Vector.<int> = new Vector.<int>;
 		private var endFrame:int = 0;
 		private var frameSpan:int = 2 * 24;
 		private var viewhead:int = 0;
@@ -91,6 +91,7 @@
 		public function initParticle(apple:Object,special:Object = null):void
 		{
 			particleLib.length = 0;
+			libStack.length = 0;
 			if (special !== null)
 			{
 				special = new special.constructor;
@@ -101,116 +102,29 @@
 				particleLib.push(particle);
 				particle.visible = false;
 				this.addChild(particle);
-				libUse.push(-1);
+				libStack.push(i);
+			}
+		}
+		private function resetLib():void
+		{
+			stackPoint = libAmount-1;
+			for (var i:int = 0; i < libAmount; i++)
+			{
+				particleLib[i].visible = false;
+				particleLib[i].gotoAndStop(1);
+				libStack[i] = i;
 			}
 		}
 		/**
-		 * "loadLocal"函数将从文档位置（SD卡）
-		 * 读取物品元件下落的序列"motion"。
+		 * "loadLocal"函数将读取物品元件下落的序列"motion"。
 		*/
 		public function loadLocal(lev:Object):void
 		{
-			if(! lev.gen)
-			{
-				motion = lev.sequence;
-			}else{
-				//generate(lev.genstats);
-			}
+			motion = lev.sequence;
 		}
 		/**
-		 * "generate"函数根据以下参数，生成物品元件下落的序列"motion"
-		 * 在游戏进行中，会读取这一序列，显示元件下落的动画
-		 * 
-		 * normal 普通元件（苹果）的数量
-		 * totalTime 下落过程的总时间
-		 * bombs 炸弹的数量
-		 * golden 金色星星的数量
-		 * threshold 每个苹果之间的距离与小鸡能达到的最大距离之比
-		 * imaSpeed 小鸡的速度
-		*/
-		private function generate(normal:int,totalTime:int,bombs:int,golden:int,threshold:Number,imaSpeed:int)
-		{
-			var totalFrame:int = totalTime * 24;
-			var deltaFrame:Number = 0;
-			var beginFrame:int = int(chickHeight / basicSpeed);
-			var deltaX:int = 0;
-			var ut:Number = (totalFrame - beginFrame)/ normal;
-			deltaFrame = beginFrame;
-			//使苹果随时间均匀分布
-			for (var i:int = 0; i < normal; i++)
-			{
-				deltaFrame += ut;
-				motion.push(new particleData  );
-				motion[i].dropFrame = int(deltaFrame);
-			}
-			for (i = 0; i < normal; i++)
-			{
-				//第一个苹果的下落位置是显示区正中间
-				if (i == 0)
-				{
-					motion[i].targetX = int((layerWidth / 2));
-				}
-				else
-				{
-					//随机生成第i+1个苹果与第i个苹果的位置偏移量
-					deltaX = (Math.random() * (1 - threshold) + threshold) * imaSpeed * deltaFrame;
-					/** 
-					 * 如果第i+1个苹果的位置超出显示区，则重新安排位置。
-					 * 如果未超出，则随机确定偏移量的正负。
-					*/
-					if (motion[i - 1].targetX > layerWidth - 80)
-					{
-						motion[i].targetX = motion[i - 1].targetX - deltaX;
-					}
-					else if (motion[i - 1].targetX < 80)
-					{
-						motion[i].targetX = motion[i - 1].targetX + deltaX;
-					}
-					else
-					{
-						motion[i].targetX = motion[i - 1].targetX + deltaX * (int(Math.random() * 2) * 2 - 1);
-					}
-					motion[i].targetX = motion[i].targetX > layerWidth ? layerWidth:motion[i].targetX;
-					motion[i].targetX = motion[i].targetX < 0 ? 0:motion[i].targetX;
-				}
-				//随机生成第i+1个苹果下落速度
-				motion[i].vy = Math.random() * 12 + basicSpeed;
-				//算出第i+1个苹果下次间隔的时长
-				if (i < normal - 1)
-				{
-					deltaFrame = motion[i + 1].dropFrame - motion[i].dropFrame;
-				}
-				//由速度倒推出第i+1个苹果实际开始下落的时间
-				motion[i].reachFrame = motion[i].dropFrame;
-				motion[i].dropFrame -= int(chickHeight / motion[i].vy);
-			}
-			var temp:particleData;
-			for (i = 0; i < bombs; i++)
-			{
-				temp = new particleData  ;
-				temp.vy = Math.random() * 12 + basicSpeed;
-				temp.reachFrame = Math.random() * (totalFrame - beginFrame) + beginFrame;
-				temp.dropFrame = temp.reachFrame - int(chickHeight / temp.vy);
-				temp.type = "bomb";
-				temp.targetX = Math.random() * layerWidth;
-				motion.push(temp);
-			}
-			for (i = 0; i < golden; i++)
-			{
-				temp = new particleData  ;
-				temp.vy = Math.random() * 12 + basicSpeed
-				temp.reachFrame = Math.random() * (totalFrame - beginFrame) + beginFrame;
-				temp.dropFrame = temp.reachFrame - int(chickHeight / temp.vy);
-				temp.targetX = Math.random() * layerWidth;
-				temp.type = "gold";
-				motion.push(temp);
-			}
-			motion.sortOn("dropFrame",Array.NUMERIC);
-		}
-		/**
-		 * "saveLevel"函数将在文档位置（SD卡）
-		 * 存储物品元件下落的序列"motion"，
-		 * 并返回新生成的文件名。
+		 * "saveLevel"函数将返回
+		 * 存储物品元件下落的序列"motion"
 		*/
 		public function saveLevel(time:int = 10000):Array
 		{
@@ -222,6 +136,25 @@
 			if((i+1) < motion.length) motion.splice(i);
 			//trace(motion.length);
 			return motion;
+		}
+		private function popStack():MovieClip
+		{
+			var p:MovieClip;
+			if(stackPoint >= 0)
+			{
+				p = particleLib[libStack[stackPoint]];
+				stackPoint--;
+			}
+			else
+			{
+				p = null;
+			}
+			return p;
+		}
+		private function pushStack(p:MovieClip):void
+		{
+			stackPoint++;
+			libStack[stackPoint] = particleLib.indexOf(p);
 		}
 		//"addParticle"函数将一个新的元件加入到motion数组中
 		public function addParticle(type:String,x,dropFrame,reachFrame:int,vy:int):int
@@ -253,16 +186,7 @@
 		}
 		public function showParticle(index:int):void
 		{
-			var i:int = 0;
-			for(i = 0;i < libUse.length;i++)
-			{
-				if(libUse[i] == -1)
-				{
-					libUse[i] = index;
-					break;
-				}
-			}
-			motion[index].p = particleLib[i];
+			motion[index].p = popStack();
 			switch (motion[index].type)
 			{
 				case "bomb" :
@@ -282,13 +206,10 @@
 		}
 		public function hideParticle(index:int):void
 		{
-			var j:int = particleLib.indexOf(motion[index].p,0);
-			//trace("hide: index",index," p",motion[index].p," lib_index",j);
+			pushStack(motion[index].p);
 			motion[index].p.visible = false;
 			motion[index].p.gotoAndStop(1);
-			//trace("find at ",j);
 			motion[index].p = null;
-			libUse[j] = -1;
 			forbid = false;
 		}
 		public function touchAdd(event:TouchEvent):void
@@ -316,15 +237,11 @@
 		public function enterEdit():void
 		{
 			motion.sortOn("reachFrame",Array.NUMERIC);
-			for (var i:int = 0; i < libAmount; i++)
-			{
-				particleLib[i].visible = false;
-				particleLib[i].gotoAndStop(1);
-			}
+			resetLib();
 			endFrame = frameSpan;
 			viewhead = 0;
 			viewrear = -1;
-			for(i = viewhead;i < motion.length && motion[i].reachFrame <= endFrame;i++)
+			for(var i:int = viewhead;i < motion.length && motion[i].reachFrame <= endFrame;i++)
 			{
 				viewrear ++;
 				showParticle(i);
@@ -335,15 +252,7 @@
 		}
 		public function exitEdit():void
 		{
-			for (var i:int = 0; i < libAmount; i++)
-			{
-				particleLib[i].visible = false;
-				particleLib[i].gotoAndStop(1);
-			}
-			for(i = 0;i < libAmount; i++)
-			{
-				libUse[i] = -1;
-			}
+			resetLib();
 			background.visible = false;
 			background.removeEventListener(TouchEvent.TOUCH_TAP,touchAdd);
 		}
@@ -395,6 +304,7 @@
 			if (runFrame % 24 == 0)
 			{
 				main.game.gameTimer();
+				//trace(rear-head,stackPoint);
 			}
 			/*
 			 * 如果运行帧数大于等于元件的出发帧数
@@ -404,23 +314,27 @@
 			*/
 			while (rear < motion.length && runFrame >= motion[rear].dropFrame)
 			{
-				particlePoint++;
-				//trace("release",i,particlePoint % libAmount);
-				motion[rear].p = particleLib[particlePoint % libAmount];
-				motion[rear].p.x = motion[rear].targetX;
-				motion[rear].p.y = -30;
-				motion[rear].p.visible = true;
-				switch (motion[rear].type)
+				motion[rear].p = popStack();
+				if(motion[rear].p !== null)
 				{
-					case "bomb" :
-						motion[rear].p.gotoAndStop(3);
-						break;
-					case "gold":
-						motion[rear].p.gotoAndStop(2);
-						break;
+					motion[rear].p.x = motion[rear].targetX;
+					motion[rear].p.y = -30;
+					motion[rear].p.visible = true;
+					switch (motion[rear].type)
+					{
+						case "bomb" :
+							motion[rear].p.gotoAndStop(3);
+							break;
+						case "gold":
+							motion[rear].p.gotoAndStop(2);
+							break;
+					}
 				}
 				rear++;
-				if (rear >= libAmount) head++;
+			}
+			while (head < rear && motion[head].p == null)
+			{
+				head++;
 			}
 			//遍历motion数组显示队列的每一个元素
 			for (var i:int = head; i < rear; i++)
@@ -453,6 +367,7 @@
 						}
 						main.game.gameEvent(motion[i].type,motion[i].targetX);
 						motion[i].p.visible = false;
+						pushStack(motion[i].p);
 						motion[i].p = null;
 					}
 					/*
@@ -473,6 +388,7 @@
 								break;
 						}
 						motion[i].p.visible = false;
+						pushStack(motion[i].p);
 						motion[i].p = null;
 					}
 					/*
@@ -489,14 +405,9 @@
 		public function resetStats():void
 		{
 			runFrame = 0;
-			particlePoint = 0;
 			rear = 0;
 			head = 0;
-			for (var i = 0; i < libAmount; i++)
-			{
-				particleLib[i].visible = false;
-				particleLib[i].gotoAndStop(1);
-			}
+			resetLib();
 		}
 		//清空motion数据
 		public function clearMotion():void

@@ -274,7 +274,7 @@
 				nlist.@title = "网络关卡集";
 				levelList.appendChild(nlist);
 			}
-			trace(levelList);
+			//trace(levelList);
 			var req:URLRequest = new URLRequest("https://raw.githubusercontent.com/Rollingpig/PickingAppleGame/master/resource/onlinelevels.xml"); 
 			dataLoader = new URLLoader(req); 
 			dataLoader.addEventListener(Event.COMPLETE, updateProcess_2); 
@@ -282,7 +282,7 @@
 		private function updateProcess_2(event:Event):void 
 		{ 
     		var newlist:XML = XML(dataLoader.data);
-			main.UIs.feedback_txt.text = "连接成功，正在扫描.."
+			main.UIs.feedback_txt.text = "连接成功，正在扫描\r"
 			var oldlist:Array = new Array();
 			downloads.length = 0;
 			titles.length = 0;
@@ -300,13 +300,26 @@
 					titles.push(lev2.name);
 				}
 			}
+			if(int(newlist.@version) > main.version)
+			{
+				main.UIs.feedback_txt.text = "最新版本："+ newlist.@version +"\r";
+				main.askUpgrade();
+			}
+			else
+			{
+				main.UIs.feedback_txt.text = "程序版本为最新\r";
+				checkUpdate();
+			}
+		}
+		public function checkUpdate():void
+		{
 			if(downloads.length !== 0)
 			{
 				updateProcess_3();
 			}
 			else
 			{
-				main.UIs.feedback_txt.text = "无可用更新，更新程序结束"
+				main.UIs.feedback_txt.appendText("无可用关卡更新，更新程序结束");
 			}
 		}
 		private function updateProcess_3():void 
@@ -315,13 +328,13 @@
 			{
 				var str:String = "https://raw.githubusercontent.com/Rollingpig/PickingAppleGame/master/resource/";
 				str = str + downloads[flag-1] + ".txt";
-				main.UIs.feedback_txt.text = "关卡下载" + flag + "/" + downloads.length;
+				main.UIs.feedback_txt.text = "关卡下载" + flag + "/" + downloads.length+"\r";
 				dataLoader = new URLLoader(new URLRequest(str)); 
 				dataLoader.addEventListener(Event.COMPLETE, updateProcess_4);
 			}
 			else
 			{
-				main.UIs.feedback_txt.text = "关卡下载完毕，更新程序结束";
+				main.UIs.feedback_txt.text = ("关卡下载完毕，更新程序结束");
 			}
 		}
 		private function updateProcess_4(event:Event):void

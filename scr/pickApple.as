@@ -13,6 +13,7 @@
 	import imgManager;
 	import flash.display.Sprite;
 	import flash.display.Shape;
+	import flash.net.*;
 
 	public class pickApple extends MovieClip
 	{
@@ -24,6 +25,7 @@
 		public var game:gameControl;
 		
 		public var dataIO:gameData;
+		public const version:int = 39;
 		
 		public var currentLevel:int = 1;
 		public var currentList:int = 1;
@@ -328,6 +330,21 @@
 			dataIO.updateProcess();
 			UIs.startUpdate_btn.removeEventListener(TouchEvent.TOUCH_TAP,startUpdate);
 			UIs.feedback_txt.text = "正在连接..."
+		}
+		public function continueUpdate(Event:TouchEvent)
+		{
+			dataIO.checkUpdate();
+		}
+		public function askUpgrade():void
+		{
+			UIs.nextFrame();
+			UIs.continue_btn.addEventListener(TouchEvent.TOUCH_TAP,continueUpdate);
+			UIs.download_btn.addEventListener(TouchEvent.TOUCH_TAP,startDownload);
+			UIs.feedback_txt.appendText("当前版本："+ version + "\r");
+		}
+		public function startDownload(Event:TouchEvent)
+		{
+			navigateToURL(new URLRequest("https://raw.githubusercontent.com/Rollingpig/PickingAppleGame/master/demo/Pick!.apk"));
 		}
 		public function listBtnHandler(event:TouchEvent)
 		{
