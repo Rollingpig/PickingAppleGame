@@ -25,7 +25,7 @@
 		public var game:gameControl;
 		
 		public var dataIO:gameData;
-		public const version:int = 39;
+		public const version:int = 40;
 		
 		public var currentLevel:int = 1;
 		public var currentList:int = 1;
@@ -35,7 +35,7 @@
 		private var iconY:int = 0;
 		private var iconmask:Shape = new Shape();
 		private var iconTotal:int = 0;
-		private var iconType:String = "list";
+		private var listType:String = "list";
 
 		private var imgSet:imgManager;
 		private var targetPage:String = "";
@@ -45,6 +45,7 @@
 
 		public function pickApple()
 		{
+			//initailize data IO tools
 			dataIO = new gameData(this);
 			//initailize particle system, add it to the stage
 			parsys = new particleSystem(this);
@@ -65,15 +66,16 @@
 		/*
 		layout
 		*/
-		public function switchPage():void
+		public function switchPage(newPage:String = ""):void
 		{
 			iconList.visible = false;
+			if(newPage !== "") targetPage = newPage;
 			switch (targetPage)
 			{
 				case "menu":
 					gotoAndStop(1);
 					UIs.gotoAndStop("menu");
-					UIs.selectPlay_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
+					UIs.selectList_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
 					UIs.selectOutput_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
 					UIs.selectEdit_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
 					UIs.about_btn.addEventListener(TouchEvent.TOUCH_TAP,goPages);
@@ -88,19 +90,19 @@
 					game.refreshDataBoard();
 					resumeGame();
 					break;
-				case "selectPlay":
+				case "selectList":
 					gotoAndStop(1);
-					UIs.gotoAndStop("select");
-					refreshList("play_list");
-					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
-					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
-					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
+					UIs.gotoAndStop("selectList");
+					refreshList("selectList");
+					UIs.left_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
+					UIs.right_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
+					UIs.exseList_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
 					break;
 				case "selectLevel":
 					gotoAndStop(1);
 					UIs.gotoAndStop("select");
-					refreshList("play_level");
-					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
+					refreshList("selectLevelList");
+					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
 					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
 					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
 					break;
@@ -108,7 +110,7 @@
 					gotoAndStop(1);
 					UIs.gotoAndStop("select");
 					refreshList("output_level");
-					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
+					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
 					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
 					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
 					break;
@@ -116,7 +118,7 @@
 					gotoAndStop(1);
 					UIs.gotoAndStop("selectEdit");
 					refreshList("edit_list");
-					UIs.back_btn.addEventListener(TouchEvent.TOUCH_TAP,backPage);
+					UIs.exedLevel_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
 					UIs.up_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsUp);
 					UIs.down_btn.addEventListener(TouchEvent.TOUCH_TAP,iconsDown);
 					UIs.blank_btn.addEventListener(TouchEvent.TOUCH_TAP,startBlank);
@@ -125,12 +127,12 @@
 					gotoAndStop(1);
 					UIs.gotoAndStop("about");
 					dataIO.getAbout();
-					UIs.exAbout_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					UIs.exAbout_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
 					break;
 				case "output":
 					gotoAndStop(1);
 					UIs.gotoAndStop("output");
-					UIs.exOut_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					UIs.exOut_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
 					UIs.id_txt.text = dataIO.levelList.list[1].level[currentLevel-1].id;
 					UIs.str_txt.text = dataIO.getLevelStr(2,currentLevel);
 					break;
@@ -138,12 +140,12 @@
 					gotoAndStop(1);
 					UIs.gotoAndStop("update");
 					UIs.startUpdate_btn.addEventListener(TouchEvent.TOUCH_TAP,startUpdate);
-					UIs.exUp_btn.addEventListener(TouchEvent.TOUCH_TAP,returnHome);
+					UIs.exUp_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
 					break;
 				case "rank":
 					gotoAndStop(1);
 					UIs.gotoAndStop("rank");
-					UIs.exRank_btn.addEventListener(TouchEvent.TOUCH_TAP,exitRank);
+					UIs.exRank_btn.addEventListener(TouchEvent.TOUCH_TAP,btnHandler);
 					UIs.rank_txt.text = dataIO.getFullRank(currentList,currentLevel);
 					UIs.title_txt.text = dataIO.levelList.list[currentList-1].level[currentLevel-1].name;
 					break;
@@ -151,7 +153,7 @@
 		}
 		public function refreshList(type:String):void
 		{
-			iconType = type;
+			listType = type;
 			iconTotal = 0;
 			iconY = 0;
 			for (var i:int = 0; i<iconArray.length; i++)
@@ -165,25 +167,11 @@
 			var tree:XMLList;
 			switch(type)
 			{
-				case "play_list":
-					tree = dataIO.getFullList();
-					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 7);
-					iconmask.y = 125;
-					iconList.y = 125;
-					for each (var prop:XML in tree.list)
-					{
-						iconTotal++;
-						var p:ListIcon = new ListIcon();
-						p.label_txt.text = String(iconTotal);
-						p.title_txt.text = prop.@title;
-						p.list_btn.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
-						addIconToList(p);
-					}
-					break;
-				case "play_level":
+				case "selectLevelList":
 					tree = dataIO.getLevelList(currentList);
-					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 7);
+					iconmask.graphics.drawRect(0,0,480,85 * 7);
 					iconmask.y = 125;
+					iconList.x = (480-400)/2;
 					iconList.y = 125;
 					for each (var prop2:XML in tree.level)
 					{
@@ -205,10 +193,27 @@
 						addIconToList(temp7);
 					}
 					break;
+				case "selectList":
+					tree = dataIO.getFullList();
+					iconmask.graphics.drawRect(0,0,480,400);
+					iconmask.y = 170;
+					iconList.x = (480-280)/2 - (currentList-1) * 300;
+					iconList.y = 175;
+					for each (var prop:XML in tree.list)
+					{
+						iconTotal++;
+						var p:cardIcon = new cardIcon();
+						p.name_txt.text = prop.@title;
+						p.names_txt.text = prop.@title;
+						p.addEventListener(TouchEvent.TOUCH_TAP,listBtnHandler);
+						addIconToQueue(p);
+					}
+					break;
 				case "output_level":
 					tree = dataIO.levelList.list.(@label == "custom")
-					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 7);
+					iconmask.graphics.drawRect(0,0,480,85 * 7);
 					iconmask.y = 125;
+					iconList.x = (480-400)/2;
 					iconList.y = 125;
 					for each (var prop3:XML in tree.level)
 					{
@@ -221,9 +226,10 @@
 					}
 					break;
 				case "edit_list":
+					iconList.x = (480-400)/2;
 					iconList.y = 125 + 135;
 					tree = dataIO.getFullList();
-					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 5);
+					iconmask.graphics.drawRect(0,0,480,85 * 5);
 					iconmask.y = 125+135;
 					for each (var prop5:XML in tree.list)
 					{
@@ -236,8 +242,9 @@
 					}
 					break;
 				case "edit_level":
+					iconList.x = (480-400)/2;
 					iconList.y = 125 + 135;
-					iconmask.graphics.drawRect((480 - 400) / 2,0,400,85 * 5);
+					iconmask.graphics.drawRect(0,0,480,85 * 5);
 					iconmask.y = 125+135;
 					tree = dataIO.getLevelList(currentList);
 					for each (var prop4:XML in tree.level)
@@ -266,9 +273,29 @@
 		}
 		private function addIconToList(piece:MovieClip):void
 		{
-			piece.x = (480 - 400) / 2;
-			piece.y = iconY;
-			iconY +=  85;
+			piece.x = 0;
+			piece.y = iconArray.length * 85;
+			iconArray.push(piece);
+			if (! iconList.contains(piece))
+			{
+				iconList.addChild(piece);
+			}
+		}
+		private function addIconToQueue(piece:MovieClip):void
+		{
+			piece.x = iconArray.length * 300;
+			piece.y = 0;
+			iconArray.push(piece);
+			if (! iconList.contains(piece))
+			{
+				iconList.addChild(piece);
+			}
+		}
+		private function addIconToGrid(piece:MovieClip,num:int):void
+		{
+			var k:int = (num - 1) % 3;
+			piece.x = k * 110 + (480-330)/2;
+			piece.y = (num - k) / 3 * 110;
 			iconArray.push(piece);
 			if (! iconList.contains(piece))
 			{
@@ -281,44 +308,102 @@
 		}
 		public function iconsDown(event:TouchEvent):void
 		{
-			//trace(iconList.height);
 			if (iconList.y + iconList.height > iconmask.height + iconmask.y) iconList.y -= 85;
 		}
 		/*
 		functions for buttons
 		*/
-		public function backPage(Event:TouchEvent)
+		public function btnHandler(event:TouchEvent):void
 		{
-			switch(iconType)
+			switch(event.target.name)
 			{
-				case "play_list":
-				case "edit_list":
-				case "output_level":
-					returnHome();
+				case "left_btn":
+					if(iconList.x < 100) iconList.x += 300;
 					break;
-				case "play_level":
-					refreshList("play_list");
+				case "right_btn":
+					if(iconList.x > (400 - iconArray.length * 300)) iconList.x -= 300;
 					break;
-				case "edit_level":
-					refreshList("edit_list");
+				case "exseList_btn":
+				case "exOut_btn":
+				case "exAbout_btn":
+				case "exUp_btn":
+					switchPage("menu");
+					break;
+				case "exRank_btn":
+					switchPage("selectLevel");
+					break;
+				case "back_btn":
+					switch(listType)
+					{
+						case "output_level":
+							switchPage("menu");
+							break;
+						case "selectLevelList":
+							switchPage("selectList");
+							break;
+					}
+					break;
+				case "exedLevel_btn":
+					if(listType == "edit_level")
+					{
+						refreshList("edit_list");
+					}
+					else
+					{
+						switchPage("menu");
+					}
 					break;
 			}
 		}
-		public function returnHome(Event:TouchEvent = null)
+		public function listBtnHandler(event:TouchEvent)
+		{
+			switch(listType)
+			{
+				case "selectList":
+					currentList = iconArray.indexOf(event.target.parent) + 1;
+					switchPage("selectLevel");
+					break;
+				case "selectLevelList":
+					parsys.resetStats();
+					parsys.clearMotion();
+					game.resetGameStats();
+					currentLevel = iconArray.indexOf(event.target.parent) + 1;
+					game.levData = dataIO.getLevel(currentList,currentLevel);
+					game.loadLevelData();
+					parsys.loadLocal(game.levData);
+					targetPage = "start game";
+					imgSet.loadBackground(game.levData.background);
+					break;
+				case "edit_list":
+					parsys.clearMotion();
+					currentList = iconArray.indexOf(event.target.parent) + 1;
+					refreshList("edit_level");
+					break;
+				case "edit_level":
+					currentLevel = iconArray.indexOf(event.target.parent) + 1;
+					game.levData = dataIO.getLevel(currentList,currentLevel);
+					parsys.loadLocal(game.levData);
+					editLevel();
+					break;
+				case "output_level":
+					currentLevel = iconArray.indexOf(event.target.parent) + 1;
+					switchPage("output");
+					break;
+			}
+		}
+		public function returnHome():void
 		{
 			targetPage = "menu";
 			imgSet.loadBackground(imgSet.menuUrl);
 		}
-		public function returnLevel(Event:TouchEvent)
+		public function returnLevel():void
 		{
-			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
 			targetPage = "selectLevel";
-			imgSet.loadBackground(imgSet.selectUrl);
+			imgSet.loadBackground(imgSet.menuUrl);
 		}
 		public function goPages(event:TouchEvent)
 		{
-			targetPage = event.target.name.split("_")[0];
-			imgSet.loadBackground(imgSet.selectUrl);
+			switchPage(event.target.name.split("_")[0]);
 		}
 		public function startBlank(Event:TouchEvent)
 		{
@@ -346,53 +431,10 @@
 		{
 			navigateToURL(new URLRequest("https://raw.githubusercontent.com/Rollingpig/PickingAppleGame/master/demo/Pick!.apk"));
 		}
-		public function listBtnHandler(event:TouchEvent)
-		{
-			switch(iconType)
-			{
-				case "play_list":
-					currentList = iconArray.indexOf(event.target.parent) + 1;
-					refreshList("play_level");
-					break;
-				case "play_level":
-					parsys.resetStats();
-					parsys.clearMotion();
-					game.resetGameStats();
-					currentLevel = iconArray.indexOf(event.target.parent) + 1;
-					game.levData = dataIO.getLevel(currentList,currentLevel);
-					game.loadLevelData();
-					parsys.loadLocal(game.levData);
-					targetPage = "start game";
-					imgSet.loadBackground(game.levData.background);
-					break;
-				case "edit_list":
-					parsys.clearMotion();
-					currentList = iconArray.indexOf(event.target.parent) + 1;
-					refreshList("edit_level");
-					break;
-				case "edit_level":
-					currentLevel = iconArray.indexOf(event.target.parent) + 1;
-					game.levData = dataIO.getLevel(currentList,currentLevel);
-					parsys.loadLocal(game.levData);
-					editLevel();
-					break;
-				case "output_level":
-					currentLevel = iconArray.indexOf(event.target.parent) + 1;
-					targetPage = "output";
-					switchPage();
-					break;
-			}
-		}
 		public function showRank(event:TouchEvent)
 		{
 			currentLevel = iconArray.indexOf(event.target.parent) + 1;
-			targetPage = "rank";
-			switchPage();
-		}
-		public function exitRank(event:TouchEvent)
-		{
-			targetPage = "selectLevel";
-			switchPage();
+			switchPage("rank");
 		}
 		public function exitProgram(Event:TouchEvent)
 		{
@@ -402,8 +444,7 @@
 		public function haltGame(Event:TouchEvent)
 		{
 			endGame();
-			targetPage = "selectLevel";
-			imgSet.loadBackground(imgSet.selectUrl);
+			returnLevel();
 		}
 		public function endGame():void
 		{
@@ -423,7 +464,12 @@
 		{
 			scoreUI.gotoAndStop(2);
 			scoreUI.name_txt.text = "player";
-			scoreUI.backLevel_btn.addEventListener(TouchEvent.TOUCH_TAP,returnLevel);
+			scoreUI.backLevel_btn.addEventListener(TouchEvent.TOUCH_TAP,recordHandler);
+		}
+		public function recordHandler(event:TouchEvent)
+		{
+			dataIO.addRankResult(scoreUI.name_txt.text,game.score,game.levData.id);
+			returnLevel();
 		}
 		public function resumeGame(Event:TouchEvent = null)
 		{
